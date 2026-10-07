@@ -1,6 +1,6 @@
 ---
 name: ruyi-eva
-description: Use the Ruyi Cuber MCP to create TikTok-style videos for existing personas/units—depth clone, creative replicate, original, or find-viral-then-replicate. Prefer this skill whenever the user wants cloud video generation, storyboards, or downloading finished mp4s via Ruyi MCP tools.
+description: Use the Ruyi EVA MCP to create TikTok-style videos for existing personas/units—depth clone, creative replicate, original, or find-viral-then-replicate. Prefer this skill whenever the user wants cloud video generation, storyboards, or downloading finished mp4s via Ruyi MCP tools.
 ---
 
 # 如奕 EVA 出片
