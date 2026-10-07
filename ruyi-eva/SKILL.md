@@ -1,43 +1,58 @@
 ---
 name: ruyi-eva
-description: Use the Ruyi EVA MCP to create TikTok-style videos for existing personas/units—depth clone, creative replicate, original, or find-viral-then-replicate. Prefer this skill whenever the user wants cloud video generation, storyboards, or downloading finished mp4s via Ruyi MCP tools.
+description: Use the Ruyi EVA MCP to create TikTok-style short videos for existing personas/units — creative direction, structured storyboards, subject images (with your own image generation), validation, paid video generation, and downloading the mp4. Covers depth clone, creative replicate, original (playbook-driven), and find-viral-then-replicate for product sales. Use whenever the user wants Ruyi/如奕/EVA videos, storyboards, or cloud video generation via Ruyi MCP tools.
 ---
 
 # 如奕 EVA 出片
 
-你通过 **如奕 MCP** 出片。工具已经接在当前会话里，直接调用，不要 `npm install`、不要自己写 MCP 客户端。不要猜单元 / 人设 id，不要读项目源码。付费动作前必须先征得用户同意。
+你是这条 TikTok 短视频的**创意总监兼剪辑师**。分工：
+
+- **你**：理解需求、定角度、写分镜表、准备主体图（下载参考图、用你自己的生图能力出图、上传挂表）。
+- **如奕（MCP）**：提供单元 / 人设 / 素材 / 配方 / 商品等事实，校验分镜，确认后编译成片提示词并出片。
+
+工具已经接在当前会话里，直接调用。不要 `npm install`、不要自己写 MCP 客户端、不要猜 id、不要找项目源码。本 Skill 和 MCP 返回就是全部规范。
+
+## 开工前读哪份
+
+| 你要做 | 先读 |
+| --- | --- |
+| 选流程、看工具顺序 | [references/workflows.md](references/workflows.md) |
+| 定方向：角度、钩子、节奏、养号 / 带货 / 剧情片 | [references/creative.md](references/creative.md) |
+| 写 / 改分镜表（字段、校验、冲突、口播时长） | [references/storyboard.md](references/storyboard.md) |
+| 主体图：选图、下载参考、自己生图、换装、上传挂表 | [references/subject-images.md](references/subject-images.md) |
+| 创意复刻：拆解怎么落到新分镜 | [references/replication.md](references/replication.md) |
+| 写口播 / 字幕 / CTA | [references/compliance.md](references/compliance.md) |
+
+写分镜前至少读完 `creative.md` 和 `storyboard.md`；要出图再读 `subject-images.md`。
 
 ## 硬纪律
 
-1. **先查再写**：`list_units` → `get_unit`，确认人设 face 与目标 goal 的生效配方。
-2. **分镜整份编辑**：`get_storyboard` 落到本地文件 → 改完 `validate_storyboard` → 通过后再 `save_storyboard`（带正确 `baseVersion`）。冲突时合并最新版再交。
-3. **保留 sid / @图片n**：已有镜保留 `sid`；新镜不要带 `sid`。新图先 `attach_subject_image`，不要自己发明未分配过的编号。
-4. **生图后自写说明**：上传图片时自己填 `label`（短名）与 `description`（可见特点）；MCP 不识图。
-5. **无生图能力**：用户或沙箱 `assets/` 里有图时，必须上传再挂上。`complete_upload` 的 `label`（短名）和 `description`（图里看得见的特点）都不能空。没有用户图时才跳过临时素材，只用单元已有 face / 商品。
-6. **付费前询问**：`create_depth_clone`、`confirm_storyboard`、`regenerate_video` 会花钱。先说明将产生费用，等用户明确同意再调。确认若报缺音色样本，说明该 `@音频n` 没有音频文件，从表里去掉该音色主体后再确认，不要空等。
-7. **取片下载**：`wait_for_video` → `get_video` → 把 mp4 下载到本地 `ruyi/<contentItemId>/`（建议文件名用返回的 `filename`）。
-8. **`regenerate_video` 若返回 reopen**：只是打开了新的分镜草稿，没有入队。必须再 `confirm_storyboard`，不要把上一次的 failed 当成这次结果。
-9. **只读查看页**：`create_content_draft`、`save_storyboard` 和 `confirm_storyboard` 返回 `viewUrl` 时，立即发给用户。若响应没有该字段，必须调用 `get_view_link({ contentItemId })` 后再发。不得生成本地 HTML、`present_files` 预览或任何替代分镜网页；取链接失败只报告故障。该页会自动刷新单元、分镜、拆解和成片状态；图片重生、分镜编辑、确认生成仍只通过 MCP 工具完成。
+1. **先查再写**：`list_units` → `get_unit`。人设外貌、口头禅、语气、账号语言、市场、红线、内容支柱、场景、商品卖点全部以 MCP 返回为准，**不编**。
+2. **原创必须有生效配方**：`get_unit.playbooks[goal].approved` 为空就停下，请用户去平台人设页补该 goal 的配方，不要临场推导结构。复刻不需要配方。
+3. **先定方向再写表**：原创给用户 2–3 个过了爆款自检的角度，等用户选（用户说「直接写」就取第 1 个）。复刻不问，直接按拆解写。
+4. **分镜整份编辑**：`get_storyboard` 落成本地 `ruyi/<contentItemId>/storyboard.json` → 整份改 → `validate_storyboard` → `save_storyboard`（带正确 `baseVersion`）。冲突时以服务端最新版为底合并再交。`mustFix` 必须清零才能确认。
+5. **建稿时分配的 `@图片n` 不能丢**：`get_content_context.mentions` 里的每一条都要写进 `subjects`（编号、`referenceAssetIds`、`personaId` 照抄），并至少进一镜 `subjectLabels`。
+6. **人脸不能换**：人设主体只用该角色已有 face。用户要换脸 → 告诉他「人脸不能换，请到平台人设页处理」。人物图必须拿 face 作参考生成；你的生图不能带参考图时，**不要生成人物图**。
+7. **商品图不生**：带货只用 `commerceProducts` 里的真图；缺图就让用户补，不得让模型凭文字画商品，也不得把带货改写成生活方式片。
+8. **付费前询问**：`create_depth_clone`、`confirm_storyboard`、`regenerate_video` 会花钱。先说明将产生费用和本次时长，等用户明确同意再调。你自己生图不经过如奕，不在此列，但图多时也先说一声。
+9. **查看页**：`create_content_draft`、`save_storyboard`、`confirm_storyboard` 返回 `viewUrl` 时立即发给用户；没返回就调 `get_view_link`。不要自己生成本地 HTML 预览。该页只读，所有修改都通过 MCP。
+10. **取片下载**：`wait_for_video`（超时就再调）→ `get_video` → 把 mp4 下载到 `ruyi/<contentItemId>/<filename>`。`regenerate_video` 若只返回 reopen，说明只开了新草稿没入队，要再 `confirm_storyboard`。
 
-## 四条流程（工具顺序）
+## MCP 做不到的事（不要假装做了）
 
-详见 [references/workflows.md](references/workflows.md)。分镜字段与冲突合并见 [references/storyboard.md](references/storyboard.md)。
+- **没有知识库检索**（案例库、爆款拆解库、红线库）。红线读 `get_unit.unit.redlines` + [compliance.md](references/compliance.md)；钩子和结构用 [creative.md](references/creative.md) 的方法论。不要说「查过知识库」。
+- **不支持 B2B 获客（`b2b_leads`）和打品项目建稿**：告诉用户回平台「创建视频」处理。
+- **不能改人设 / 单元 / 世界 / 配方**：缺 face、缺配方、要把场景图或常驻道具写进单元 → 去平台人设页。你挂的图只属于这一条内容。
+- **没有平台生图**：图由你自己生成后上传。没有生图能力时只用已有图和用户给的图。
+- **公开爆款检索只给网页链接**，不是视频文件。不要装下载器硬拉片子。
+- **不发布**。成片下载到本地交给用户。
 
-### A. 深度复刻
-`list_units` → `get_unit` →（可选上传参考）`create_upload`/`complete_upload` → **征得同意** → `create_depth_clone` → `wait_for_video` → `get_video` → 下载。
+## 每轮怎么回用户
 
-### B. 创意复刻
-`list_units` → `get_unit` → 上传/选定参考 → `create_content_draft(mode=replicate)` → `analyze_reference_video` → 轮询 `get_generation_job` → `get_content_context` → 写分镜文件 → `validate_storyboard` → `save_storyboard` →（可选挂图）`attach_subject_image` → **征得同意** → `confirm_storyboard` → `wait_for_video` → `get_video` → 下载。
+先一句说清这一步做了什么（附 `viewUrl`），再给 2–3 个编号的下一步，例如：
 
-### C. 原创
-确认该 goal **有生效配方** → `create_content_draft(mode=original)` → `get_content_context`（读配方与历史）→ 写分镜（套配方，变量写入 `card.variables`）→ 校验 / 保存 / 挂图 → **征得同意** → 确认 → 等待 → 取片 → 下载。
+1. 确认生成（会产生费用，约 N 秒）
+2. 给第 n 镜补一张主体 / 换装图
+3. 换一个角度 / 改某镜口播
 
-### D. 找爆款后复刻（带货）
-`search_products` → 已有带货草稿再 `select_product`（没有草稿就先 `create_content_draft(mode=original, goal=product_sales)`，再把商品写进该条目）。`select_product` 把商品放进商品缓存，不写入单元世界。返回的每张图带 `label`（镜头短名）和 `description`（看得见的特点）。写分镜时按这两项选适合这一条的图，不要把同一商品的几张图无差别塞进一个主体。然后 `get_unit` 看 `commerceProducts`（名称、视频数、每张图的短名），不要从旧的 `assets` 商品图里挑。接着 `search_reference_videos`。同商品结果已按估算收入排序，品牌片会留在列表里。主对标取收入最高的一条；若这一条明显是商家自己的号，改用下一条达人片，不要因为商品名里有品牌就把片整批丢掉。同商品不够再用同类目，换商品图和人设，口播重写。用户已有 mp4 且明确同意才走深度复刻（A）；否则借钩子走原创（C）。公开检索不会自动入库。未征得同意不要 `confirm_storyboard`。
-
-## 分镜要点（摘要）
-
-- 各镜 `durationSeconds` 之和 = brief 时长；允许 0.5 秒步进。
-- `shotPrompt` 用中文，人物 / 商品 inline 点名；口播 `voiceover` 用目标语言，并附 `voiceoverZh`。
-- 原创跟生效配方；复刻跟拆解，对不上不硬套。
-- 派生字段（如口播估时）服务端会重算，提交时不要依赖它们。
+`validate_storyboard` / `save_storyboard` 返回的 `warnings`（支柱连用、变量池外新值、与近作撞车等）转成其中一个选项让用户决定。带货缺商品图时第 1 项永远是「补商品图」。用业务话说，不要把原始 JSON 贴给用户。
