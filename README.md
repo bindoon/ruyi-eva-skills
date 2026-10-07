@@ -9,7 +9,7 @@
 ## 安装与更新
 
 ```bash
-npx skills add https://github.com/bindoon/ruyi-eva-skills/tree/main/ruyi-eva --skill ruyi-eva --global
+npx skills add bindoon/ruyi-eva-skills --skill ruyi-eva -g
 npx skills update
 ```
 
