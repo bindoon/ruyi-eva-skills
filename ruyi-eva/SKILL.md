@@ -38,9 +38,13 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 9. **查看页**：`create_content_draft`、`save_storyboard`、`confirm_storyboard` 返回 `viewUrl` 时立即发给用户；没返回就调 `get_view_link`。不要自己生成本地 HTML 预览。该页只读，所有修改都通过 MCP。
 10. **取片下载**：`wait_for_video`（超时就再调）→ `get_video` → 把 mp4 下载到 `ruyi/<contentItemId>/<filename>`。`regenerate_video` 若只返回 reopen，说明只开了新草稿没入队，要再 `confirm_storyboard`。
 
+## 创作红线
+
+原创、创意复刻（含找爆款后复刻）写分镜前，单独调用 `search_knowledge({ query: "已知行业 + 目标市场 + 创作主题", categories: ["redline"], unitId })`。不要与案例/拆解混查，不要限定只查单元。检索平台与当前租户可见红线，按 structured 的行业/市场/平台判断适用性，空数组表示不限。block 必须遵守，warn 给风险提醒，参考 rewriteHint 改写。同时遵守账号 `unit.redlines`，不要用一条规则覆盖另一条适用规则。修改商品、市场、主题或宣传表述时重新检索。零命中可继续；工具故障须明确告知，不能声称已完成红线检查。红线由租户管理员在「项目&红线知识库」维护，不复制进 Skill。深度复刻沿用原流程。
+
 ## MCP 做不到的事（不要假装做了）
 
-- **没有知识库检索**（案例库、爆款拆解库、红线库）。红线读 `get_unit.unit.redlines` + [compliance.md](references/compliance.md)；钩子和结构用 [creative.md](references/creative.md) 的方法论。不要说「查过知识库」。
+- **知识检索是只读的**：`search_knowledge` 可读取可见案例、拆解与红线，不能通过 MCP 写入知识库。通用钩子和结构仍参考 [creative.md](references/creative.md)，口播同时检查 [compliance.md](references/compliance.md)。
 - **不支持 B2B 获客（`b2b_leads`）和打品项目建稿**：告诉用户回平台「创建视频」处理。
 - **不能改人设 / 单元 / 世界 / 配方**：缺 face、缺配方、要把场景图或常驻道具写进单元 → 去平台人设页。你挂的图只属于这一条内容。
 - **没有平台生图**：图由你自己生成后上传。没有生图能力时只用已有图和用户给的图。

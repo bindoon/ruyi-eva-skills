@@ -19,6 +19,8 @@ list_units                      # 找到单元；名字对不上就列给用户�
 get_unit(unitId)
 ```
 
+原创和创意复刻写分镜前单独检索红线，修改商品/市场/主题/宣传表述后再查。平台与本租户规则共同参考，同时遵守账号 redlines；按适用范围判断，block 遵守、warn 提醒，零命中可继续，故障须告知。
+
 从 `get_unit` 读并记下：
 
 - `unit.language` / `targetMarket`：口播语言和市场（US 账号写英文）。
@@ -53,6 +55,7 @@ create_content_draft(mode=replicate, unitId, goal, referenceVideoId, personaIds,
                      productAssetIds?, durationSeconds, language?, note?)
 analyze_reference_video(contentItemId) → 轮询 get_generation_job 到 succeeded / reused
 get_content_context                       # referenceBreakdown + mentions + 素材
+search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId=unitId)
 get_storyboard → 按 replication.md 写表 → validate → save
 按 subject-images.md 补图 → attach_subject_image → get_storyboard 刷新
 → 说明费用，等用户同意
@@ -69,6 +72,7 @@ confirm_storyboard → wait_for_video → get_video → 下载
 get_unit 确认 playbooks[goal].approved 存在；没有就停，请用户去平台补配方
 create_content_draft(mode=original, unitId, goal, personaIds, durationSeconds, language?, note?)
 get_content_context                       # playbook + recentEpisodes + mentions
+search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId=unitId)
 按 creative.md 定方向：盘点近作 → 2–3 个角度 → 等用户选
 get_storyboard → 写表（套配方，变量写进 card.variables）→ validate → save
 按 subject-images.md 补图 → attach → 刷新

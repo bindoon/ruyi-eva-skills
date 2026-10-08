@@ -2,7 +2,9 @@
 
 写 `voiceover` / `voiceoverZh` / `onScreenText` / `hookScript` / `cta` / `caption` 时过本表。面向 TikTok 和 TikTok Shop，不是国内广告法。命中就改词再交表，不要把红线词留给用户改。
 
-先读 `get_unit.unit.redlines`：这是本账号自己的红线（不能说的话、不能拍的东西），优先级高于下面的通用规则。
+原创与创意复刻写分镜前，单独调用 `search_knowledge`，`categories: ["redline"]`，query 带行业、市场与主题。按 structured 的行业/市场/平台判断适用性，空数组不限；block 必须遵守，warn 给风险提醒，参考 rewriteHint 改写。修改商品/市场/主题/宣传表述后重新检索。零命中可继续；故障须明确告知，不能声称已完成红线检查。
+
+同时读 `get_unit.unit.redlines`：这是本账号自己的红线（不能说的话、不能拍的东西），优先级高于下面的通用规则。
 
 ## 不能写
 
