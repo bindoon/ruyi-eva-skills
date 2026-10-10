@@ -28,8 +28,8 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 ## 硬纪律
 
 1. **先查再写**：`list_units` → `get_unit`。人设外貌、口头禅、语气、账号语言、市场、红线、内容支柱、场景、商品卖点全部以 MCP 返回为准，**不编**。
-2. **原创必须有生效配方**：`get_unit.playbooks[goal].approved` 为空就停下，请用户去平台人设页补该 goal 的配方，不要临场推导结构。复刻不需要配方。
-3. **先定方向再写表**：原创给用户 2–3 个过了爆款自检的角度，等用户选（用户说「直接写」就取第 1 个）。复刻不问，直接按拆解写。
+2. **原创必须有生效配方**：先按商品、市场、语言和该 goal 的配方筛选单元，再建稿。用户让你自行选单元时，直接选择适用候选；某个候选没配方就继续检查其他候选，不要先建错 goal 的草稿。全部候选都不适用时，说明具体缺项，请用户在平台补对应配方，不要临场推导结构。复刻不需要配方。
+3. **先定方向再写表**：原创给用户 2–3 个过了爆款自检的角度，等用户选；用户说「直接写」「自行选择」「继续直到脚本完成」时自行选角度并继续。复刻不问，直接按拆解写。
 4. **分镜整份编辑**：`get_storyboard` 落成本地 `ruyi/<contentItemId>/storyboard.json` → 整份改 → `validate_storyboard` → `save_storyboard`（带正确 `baseVersion`）。冲突时以服务端最新版为底合并再交。`mustFix` 必须清零才能确认。
 5. **建稿时分配的 `@图片n` 不能丢**：`get_content_context.mentions` 里的每一条都要写进 `subjects`（编号、`referenceAssetIds`、`personaId` 照抄），并至少进一镜 `subjectLabels`。
 6. **人脸不能换**：人设主体只用该角色已有 face。用户要换脸 → 告诉他「人脸不能换，请到平台人设页处理」。人物图必须拿 face 作参考生成；你的生图不能带参考图时，**不要生成人物图**。
@@ -37,6 +37,9 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 8. **付费前询问**：`create_depth_clone`、`confirm_storyboard`、`regenerate_video` 会花钱。先说明将产生费用和本次时长，等用户明确同意再调。你自己生图不经过如奕，不在此列，但图多时也先说一声。
 9. **查看页**：`create_content_draft`、`save_storyboard`、`confirm_storyboard` 返回 `viewUrl` 时立即发给用户；没返回就调 `get_view_link`。不要自己生成本地 HTML 预览。该页只读，所有修改都通过 MCP。
 10. **取片下载**：`wait_for_video`（超时就再调）→ `get_video` → 把 mp4 下载到 `ruyi/<contentItemId>/<filename>`。`regenerate_video` 若只返回 reopen，说明只开了新草稿没入队，要再 `confirm_storyboard`。
+11. **仅做脚本**：用户说不生成视频时，仍完成商品选择、红线检索、分镜、主体素材、校验、保存和保存后复读；结束条件是 `errors=[]`、`mustFix=[]` 且进镜图片都能解析。不要调用 `confirm_storyboard`、`create_depth_clone` 或 `regenerate_video`，也不用等待视频。说明仍是草稿并交付查看链接。
+
+用户指定本地 MCP 时使用该本地连接和本地令牌；网页商品链接只提取 `productId` 与 `region`，不沿用线上数据或令牌。接口地址和查看页地址可能端口不同，以 MCP 返回的 `viewUrl` 为准。用户要求隔离重跑时，每轮先建新的工作目录，只在本轮目录下保存 `ruyi/<contentItemId>/`，不读取旧轮的脚本、id 或素材文件；事实重新从 MCP 获取。
 
 ## 创作红线
 

@@ -2,6 +2,8 @@
 
 四条流程共用同一套「读事实 → 定方向 → 写表 → 主体图 → 校验保存 → 付费确认 → 取片」。工作目录统一用 `ruyi/<contentItemId>/`：`storyboard.json`、`refs/`（下载的参考图）、`images/`（你生成的图）、成片 mp4 都放这里。
 
+用户只要脚本时，完成到「主体图 → 校验保存 → get_storyboard 复读」即结束；不要确认入队。指定隔离工作目录时，上述相对路径放在本轮的新目录内。
+
 ## 选哪条
 
 | 用户说 | 流程 |
@@ -18,6 +20,8 @@
 list_units                      # 找到单元；名字对不上就列给用户选，不要猜
 get_unit(unitId)
 ```
+
+用户给商品链接时，先 `get_product(productId, region)` 读确切商品；不要把数字 ID 当关键词传给 `search_products`，关键词检索失败不代表商品不存在。用户让你自行找单元时，先读目标商品与市场，再筛选 `list_units` 里该 goal 有生效配方的候选，逐个 `get_unit` 核对配方适用性及人设 face；确定后才建稿。别把穿搭配方硬套成护肤，也别借 `persona_ip` 配方建带货。缺配方是平台准备项，MCP 不能写配方；报告前先排查其他适用候选。
 
 原创和创意复刻写分镜前单独检索红线，修改商品/市场/主题/宣传表述后再查。平台与本租户规则共同参考，同时遵守账号 redlines；按适用范围判断，block 遵守、warn 提醒，零命中可继续，故障须告知。
 
@@ -70,7 +74,7 @@ confirm_storyboard → wait_for_video → get_video → 下载
 
 ```
 get_unit 确认 playbooks[goal].approved 存在；没有就停，请用户去平台补配方
-create_content_draft(mode=original, unitId, goal, personaIds, durationSeconds, language?, note?)
+create_content_draft(mode=original, unitId, goal, personaIds, productAssetIds?, durationSeconds, language?, note?)
 get_content_context                       # playbook + recentEpisodes + mentions
 search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId=unitId)
 按 creative.md 定方向：盘点近作 → 2–3 个角度 → 等用户选
@@ -88,7 +92,7 @@ confirm_storyboard → wait_for_video → get_video → 下载
 需要该单元 `product_sales` 有生效配方（同 C）。
 
 ```
-search_products(query, region?)           # 选品广场
+get_product(productId, region)            # 用户给了商品链接时直接读取；不知道商品时才 search_products(query, region?)
 create_content_draft(mode=original, goal=product_sales, ...)   # 先有条目
 select_product(contentItemId, productId, region?)   # 写入 brief.product；商品图进商品缓存
 get_unit → commerceProducts 里找到这件货和它每张图的 label / description / url
@@ -104,6 +108,8 @@ search_reference_videos(contentItemId, limit=5)
 - 结果只有网页链接，**不能复刻文件**。用户另外给了 mp4 且同意花钱才走 A / B；否则就是借钩子写原创（C 的后半段）。
 
 之后按 C 写表。商品主体只挂适合这一条的图（读每张 `label` / `description`），不要把同一商品的几张图无差别塞进一个主体。
+
+`select_product` 之后重新取 `get_content_context` 和 `get_unit`，使用当前商品图库。`get_storyboard` 版本 0 的骨架可能没有主体，必须按 context 的 `mentions` 补全人设；新选商品用图库真实图片作为 product 主体，并至少进入一镜。不要把骨架为空或查看页没有分镜误认为建稿失败。
 
 ## 上传图片的固定动作
 
