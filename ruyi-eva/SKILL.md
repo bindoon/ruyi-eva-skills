@@ -18,7 +18,7 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 | --- | --- |
 | 选流程、看工具顺序 | [references/workflows.md](references/workflows.md) |
 | 定方向：角度、钩子、节奏、养号 / 带货 / 剧情片 | [references/creative.md](references/creative.md) |
-| 写 / 改分镜表（字段、校验、冲突、口播时长） | [references/storyboard.md](references/storyboard.md) |
+| 写 / 改分镜表（字段分工、素材职责、动作状态、写作自查、校验） | [references/storyboard.md](references/storyboard.md) |
 | 主体图：选图、下载参考、自己生图、换装、上传挂表 | [references/subject-images.md](references/subject-images.md) |
 | 创意复刻：拆解怎么落到新分镜 | [references/replication.md](references/replication.md) |
 | 写口播 / 字幕 / CTA | [references/compliance.md](references/compliance.md) |

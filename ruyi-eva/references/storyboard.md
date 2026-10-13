@@ -50,7 +50,7 @@
 | `name` | 短名（「Coco」「多效抗衰润肤棒」「客厅」）；mentions 里的照抄 `subject` |
 | `role` | 这个主体在片里干什么 |
 | `description` | person：人设外貌（从 `soul.appearance` 抄）；穿搭只改衣服词，不要换成参考图里另一个人。product：只抄商品名 + 卖点 + 该图 `description`，**禁止自补颜色 / 材质 / 五金 / Logo** |
-| `usage` | mentions 里有就照抄 |
+| `usage` | 用户用途原样保留；未填时按图写参考属性，见下方字段分工 |
 | `source` | `persona_pointer` 人设 face · `unit_library` 单元库 / 商品库 · `session_upload` 用户这次给的图 · `generated` 你生成的图 · `reference_only` 原片有、我们还没图 |
 | `referenceAssetIds` | 素材 id，`[0]` 是成片用的那张，最多 4 个。人设主体只填该角色 `faceAssetId` |
 | `personaId` | 来自人设的 person 必填；修订时不要删、不要改 |
@@ -88,7 +88,7 @@
 | `shotPrompt` | **成片正文，中文写**（人名、地名、品牌名可留原文）。见下 |
 | `voiceover` | 目标语言口播；无口播留空 |
 | `voiceoverZh` | 目标语言不是中文时的译文 |
-| `audio` | 环境底噪、音效、画外反应 |
+| `audio` | 环境声、动作音效、音乐取舍；台词只放 voiceover |
 | `onScreenText` | 字幕，目标语言，复述口播不另起说法 |
 | `subjectLabels` | 这一镜**真出现**的 `@图片n` / `@音频n`，最多 8 个 |
 | `locked` | 锁住的镜修订时不能改也不能删 |
@@ -96,15 +96,30 @@
 
 不要传 `index`、`estimatedSpeechSeconds`，服务端会算。
 
-### shotPrompt 怎么写
+## 字段分工
 
-- 从动作起笔。人物 / 商品在做事的地方 inline 点名：「`@图片1` 把 `@图片2` 贴近镜头，拇指划开盖子」。
-- `subjectLabels` 里的 person / product / style 主体**必须**在 `shotPrompt` 里出现；`shotPrompt` 里写到的编号也必须在 `subjectLabels` 里。场景主体只进 `subjectLabels`，不必写进句子。
-- 不要在开头堆花名册。系统不会把 `subjectLabels` 抄进行首；开头连续两个以上标签会被剥掉。人物在做事处 inline 点名。
-- 一镜到底时每段只写一个主要动作，不要每段重设机位、甩镜或跳到独立特写。多镜剪辑才换机位，并写清上一镜怎么接到这一镜。
-- 用户给了逐镜物理 / 材质 / 禁项时用中文写清，不得概括。文字不必比 `visual` 更长。
-- 不写字幕、Logo、价格、购物车（会被拒）；机位写 `camera`，声音写 `audio`，口播不写在这里。
-- 外貌靠参考图，不要把 `subjects[].description` 抄进来；全局画质写 `card.visualStyle`，禁项写 `card.negativeDirectives`。
+- `subjects.usage`：素材参考哪些属性。用户已填用途原样保留；未填时按实际图补一句，易串角色才补不采用的内容。例：场景「只参考空间和光线，不引入图中人物」；换装「只参考服装，身份仍是主角」。外貌由图定义，不把 description 抄进逐镜。
+- `shotPrompt`：中文动作正文，专名可留原文。从动作起笔，人物 / 商品 / style 在做事处 inline `@图片n`，且与本镜 `subjectLabels` 对齐；场景只进 labels。开头连续 2+ 标签会被剥掉，单个开头标签保留。`visual` 是运营摘要。
+- `camera`：景别、机位、运动与焦点对象。少见术语补可见变化，如「移焦：手中杯子逐渐虚化，后方人物面部变清晰」。转场写触发物、方向和到达构图；一镜到底只能连续运动，不能跳到独立特写。
+- `audio`：按需写环境声、动作音效、音乐的取舍。无人声时 voiceover 留空；不要为凑字段增加声音。台词只放 `voiceover`，译文只放 `voiceoverZh`；语言和口音 / 语气用 `language`、`card.narrator`，不在 audio 或 shotPrompt 重抄台词。
+- `card.visualStyle` / `negativeDirectives`：全局风格 / 禁项，逐镜不重复。准确字幕、Logo、价格、CTA 字样不交给成片模型；字幕填 onScreenText。不要宣称平台已经自动完成后期。
+
+## 动作与状态
+
+每段一个主要变化，必要时写「动作 → 结束时可见状态」：谁仍在画面哪侧、道具由谁持有、放在哪里、数量是否改变。下一段从该状态承接；简单镜头一句即可，不强制长模板。按用户给定的物理 / 材质 / 禁项写清，不概括掉。
+
+`continuityNotes` 只写跨镜不变量：身份与数量、服装、道具归属、空间方向、光线或运动趋势，最多 6 条，一镜到底至少 1 条。区分人物自身左右与画面左右。情绪保留 emotion / emotionalArc，正文用触发事件加 2–4 个关键外在反应，不堆抽象强度词或无关细节。
+
+时长保留 0.5 秒步进，系统生成连续时间轴；时间是节奏指引，不保证帧级落点。动作过密就删非必要动作或与用户调整时长，不塞频次指令。一镜到底的总时长与参考图必须落在当前单段上限内，单段最多 30 图；以 get_content_context 返回的 constraints 为准，不因指南写 30 秒就放宽。
+
+## 三个局部改写例
+
+以下只展示变化字段，完整表仍按 schema 填。
+
+1. **单人商品演示**：原 shotPrompt「@图片1 展示 @图片2，惊喜。」→「@图片1 把 @图片2 放到桌面中央，松手后看向它，眉头舒展并轻轻点头；结束时商品留在桌上，手已移开。」camera「固定中景，人物和商品均在画面内」；audio「保留放置声与室内底噪，无背景音乐」；voiceover「It fits right here.」，voiceoverZh「它正好放这里。」；narrator `{language: "en", toneInstruction: "自然美式英语，轻声"}`。商品 usage「只参考实际商品外观，不改变结构」；不用虚构功效证明。
+2. **双角色道具交接**：原 shotPrompt「@图片1 和 @图片2 交换 @图片3。」→「@图片1 从画面左侧把 @图片3 递给右侧的 @图片2；@图片2 双手接稳后，@图片1 松手；结束时道具只由 @图片2 持有。」continuityNotes「两人站位不交换，道具始终只有一个」；camera「固定双人中景，交接手部可见」。三者都进 subjectLabels，voiceover 留空。
+3. **一镜到底推进**：原 camera「全景切特写再切背面。」→ card.shootingMode「single_take」；第一段 shotPrompt「@图片1 拿起 @图片2，结束时商品在右手、人物仍站桌后」；第二段「@图片1 将右手的 @图片2 举到胸前，结束时停稳面向镜头」；camera 分别「固定中景」「从同一机位缓慢推近，持续保留手与商品」；continuityNotes「商品始终在右手，人物不离开桌后，镜头连续推近不跳切」。
+
 
 ### 编译出来长这样（只用来理解，不要自己写）
 
@@ -146,6 +161,10 @@
 - `changeNote` 写一句为什么改（用户要求 / 口播超时 / 合规改词 / 口味 / 试另一种钩子）。
 - 最新一版是 `draft` 时，哪怕更早有一版已确认、已经出过片，也按这一版继续改；不要告诉用户「已确认没法改」。
 
+## 保存前写作自查
+
+检查素材对应与职责、动作容量、必要结束状态、人物数量与道具归属、机位和拍摄方式、声音取舍及语言。此处是创作自查，不新增服务端硬门。validate → save → get_storyboard 复读；表与图就绪后沿用 review_storyboard：只按原文证据修一次再查一次，剩余建议交给用户。改表或换图后旧检查作废，故障不得说通过。
+
 ## 系统会拦的
 
 | 级别 | 情形 |
@@ -159,3 +178,5 @@
 ## 创作红线自查
 
 写原创/创意复刻分镜前，单独调用 `search_knowledge`，`categories: ["redline"]`，query 带行业、市场、主题；修改商品/市场/主题/宣传表述后再查。按行业、市场、平台判断平台和当前租户规则的适用范围，空数组不限。block 必须遵守，warn 提醒，rewriteHint 用于改写。零命中可继续，故障要明确告知。检查口播、屏幕字、钩子与 CTA，不能照抄参考片的违规宣称。
+
+写作方法参考：[火山 Seedance 2.5 指南](https://docs.volcengine.com/docs/ark/seedance-2-5-prompt-guide?lang=zh)、[飞书撰写指南](https://bytedance.larkoffice.com/docx/OsiUdR1OxoDqvnxsK8LczYx7nPd)。这里只吸收现有分镜字段可执行的写法，不代表如奕新增视频编辑、延长或关键帧接口。提示词不保证特定画质、完全一致或帧级剪辑。
