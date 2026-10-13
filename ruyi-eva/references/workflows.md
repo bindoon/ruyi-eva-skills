@@ -126,6 +126,7 @@ get_storyboard                                              # 挂图不出新版
 ## 确认与出片
 
 - 确认前最后一次 `validate_storyboard`：`errors` 和 `mustFix` 都为空；所有进镜的主体都有图；带货有商品图。
+- 保存后调用一次 `review_storyboard`。建议不阻止生成。只按原文证据修一次并再查一次，剩余建议交给用户。检查失败或返回未检查时，不要说已经通过。
 - 确认报「缺音色样本」：该 `@音频n` 没有音频文件，从表里删掉这个音色主体（以及 `card.narrator.voiceLabel`）再确认，不要空等。
 - `wait_for_video` 最多等约 50 秒，`timedOut=true` 就再调，直到 `succeeded` / `failed`。失败把 `lastError` 原样告诉用户，问要不要改表重出。
 - 成片不满意要再出一版：说明费用 → `regenerate_video`。返回 reopen 时按修订规则改表，再 `confirm_storyboard`。

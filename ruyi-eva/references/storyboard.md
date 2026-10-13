@@ -31,6 +31,8 @@
 | `emotionalArc` | 三段式（必填） |
 | `hookType` | 只选一种（必填），见 creative.md 十种钩子 |
 | `visualStyle` / `visualAnchor` | 全局风格一句 / 全片反复出现的画面锚点 |
+| `shootingMode` | `single_take` 一镜到底，或 `edited` 多镜剪辑。新脚本必须选。一镜到底的时间段是同一镜头里的动作节拍，不是切镜 |
+| `continuityNotes` | 进出场方向、空间位置、动作和道具状态承接，最多 6 条，会写进成片 prompt。一镜到底至少 1 条 |
 | `narrator` | `{ language, toneInstruction, voiceLabel }`；有口播时 `language` 必须有 |
 | `shootingNotes` | 2–4 条 |
 | `negativeDirectives` | 全片禁项，最多 6 条 |
@@ -98,8 +100,9 @@
 
 - 从动作起笔。人物 / 商品在做事的地方 inline 点名：「`@图片1` 把 `@图片2` 贴近镜头，拇指划开盖子」。
 - `subjectLabels` 里的 person / product / style 主体**必须**在 `shotPrompt` 里出现；`shotPrompt` 里写到的编号也必须在 `subjectLabels` 里。场景主体只进 `subjectLabels`，不必写进句子。
-- 不要在开头堆花名册，系统会在行首自动抄 `subjectLabels`。
-- 不能短于 `visual`。用户给了逐镜物理 / 材质 / 禁项时用中文写清，不得概括。
+- 不要在开头堆花名册。系统不会把 `subjectLabels` 抄进行首；开头连续两个以上标签会被剥掉。人物在做事处 inline 点名。
+- 一镜到底时每段只写一个主要动作，不要每段重设机位、甩镜或跳到独立特写。多镜剪辑才换机位，并写清上一镜怎么接到这一镜。
+- 用户给了逐镜物理 / 材质 / 禁项时用中文写清，不得概括。文字不必比 `visual` 更长。
 - 不写字幕、Logo、价格、购物车（会被拒）；机位写 `camera`，声音写 `audio`，口播不写在这里。
 - 外貌靠参考图，不要把 `subjects[].description` 抄进来；全局画质写 `card.visualStyle`，禁项写 `card.negativeDirectives`。
 
@@ -107,9 +110,11 @@
 
 ```
 风格：<card.visualStyle>
-秒级时间轴：
-[0-2.5s] @图片1 @图片3 <shotPrompt>。镜头：<camera>。声音：<audio>。口播（en）："…"
-主体：@图片1 = Coco（主角）…
+拍摄方式：全片一镜到底。以下时间段是同一个连续镜头内的动作节拍，不代表切镜……
+连续性要求：<continuityNotes>
+参考素材：@图片1 = Coco（角色外观参考）；@图片3 = 厨房（场景空间参考，不是待插入的静帧）
+动作时间轴（时间为节奏指引）：
+[0-2.5s] @图片1 <shotPrompt>。镜头：<camera>。声音：<audio>。口播（en）："…"
 禁止：<negativeDirectives>
 不得生成字幕、Logo、价格、CTA 文案或购买按钮；这些由后期合成。
 ```
@@ -145,8 +150,9 @@
 
 | 级别 | 情形 |
 | --- | --- |
-| 拒绝保存 | 各镜时长之和 ≠ brief 时长；时长不是 0.5 倍数；单镜超 15 秒；`subjectLabels` 指向不存在的主体；`shotPrompt` 写了不在 `subjectLabels` 里的编号；`shotPrompt` 写字幕 / Logo / 价格 / 购物车；主体编号重复或非法；音色多于 1 个；建稿 mentions 丢失或没进镜；单段参考图超 30 张；改了锁定镜；新编号未经 attach |
-| `mustFix`（存得进去，确认前必须清） | 口播超时；`shotPrompt` 缺失、短于 `visual` 或没点名本镜人物 / 商品；主体没进任何镜；带货没有商品主体；有口播没语言；与近作角度 + 钩子重复或变量取值完全相同 |
+| 拒绝保存 | 各镜时长之和 ≠ brief 时长；时长不是 0.5 倍数；单镜超 15 秒；一镜到底总时长或参考图超过单段上限；`subjectLabels` 指向不存在的主体；`shotPrompt` 写了不在 `subjectLabels` 里的编号；`shotPrompt` 写字幕 / Logo / 价格 / 购物车；主体编号重复或非法；音色多于 1 个；建稿 mentions 丢失或没进镜；单段参考图超 30 张；改了锁定镜；新编号未经 attach |
+| `mustFix`（存得进去，确认前必须清） | 口播超时；`shotPrompt` 缺失或没点名本镜人物 / 商品；主体没进任何镜；带货没有商品主体；有口播没语言；与近作角度 + 钩子重复或变量取值完全相同 |
+| 连续性检查（不阻止生成） | `review_storyboard` 看最终编译 prompt。只修有原文证据的问题一次，再查一次。改表或换图后旧结果作废。检查失败不得说通过 |
 | `warnings`（转成选项给用户） | 支柱连用 3 条、变量池外新值等 |
 | 确认时额外拦 | 进镜主体没有图；带货商品主体没有图 |
 
