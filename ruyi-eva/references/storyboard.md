@@ -4,6 +4,10 @@
 
 你只写表。确认时如奕把表**编译**成成片提示词送生视频，你不写整段时间轴、不写 model / prompt / engine。
 
+## 写实质感
+
+未指定非写实风格时，`card.visualStyle` 写现场光源、自然曝光与白平衡、自然肤色、克制色彩和适度锐度；皮肤纹理随景别与光照变化，不强化毛孔。`negativeDirectives` 合并一条：避免磨皮、塑料皮肤、过度锐化、HDR 光晕及重度调色；连同合规禁项最多 6 条。须落表，明确风格优先。底图问题不保证靠视频修复；写实不等于事实证据。
+
 ## 文件式编辑
 
 1. `get_storyboard`：记下 `version`（无草稿时是 `0`，返回的是骨架）和 `storyboard`，写进 `ruyi/<contentItemId>/storyboard.json`。
