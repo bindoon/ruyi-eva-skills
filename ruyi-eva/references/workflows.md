@@ -1,6 +1,6 @@
 # 出片流程
 
-四条流程共用同一套「读事实 → 定方向 → 写表 → 主体图 → 校验保存 → 付费确认 → 取片」。工作目录统一用 `ruyi/<contentItemId>/`：`storyboard.json`、`refs/`（下载的参考图）、`images/`（你生成的图）、成片 mp4 都放这里。
+出片流程共用同一套「读事实 → 定方向 → 写表 → 主体图 → 校验保存 → 付费确认 → 取片」。工作目录统一用 `ruyi/<contentItemId>/`：`storyboard.json`、`refs/`（下载的参考图）、`images/`（你生成的图）、成片 mp4 都放这里。
 
 用户只要脚本时，完成到「主体图 → 校验保存 → get_storyboard 复读」即结束；不要确认入队。指定隔离工作目录时，上述相对路径放在本轮的新目录内。
 
@@ -11,7 +11,7 @@
 | 「照这条视频原样换成我的人 / 货」，且给了 mp4、同意花钱 | A 深度复刻 |
 | 「参考这条视频的结构给我做一条」，有 mp4 | B 创意复刻 |
 | 「给某单元做一条养号 / 带货视频」，没有参考片 | C 原创 |
-| 「找个爆款带这个货」 | D 找爆款后原创 |
+| 「找个爆款带这个货」 | D 推荐爆款后创意复刻 |
 | B2B 获客、打品项目 | 不支持，请用户回平台「创建视频」 |
 
 ## 共用前置
@@ -87,29 +87,52 @@ confirm_storyboard → wait_for_video → get_video → 下载
 - `note` 写选定角度的一句话说明（例如「在便利店被店员认出：口头禅接反转」）；不写就用配方默认说明。
 - 原创总时长最长 60 秒，超过单段上限时服务端在镜头边界自动切段再拼接；单镜不能超过 15 秒。默认 15 秒。
 
-## D. 找爆款后原创（带货）
+## D. 推荐爆款后创意复刻（带货）
 
-需要该单元 `product_sales` 有生效配方（同 C）。
+只使用广场商品。此流程是复刻，不要求生效配方，不先建原创稿。
 
 ```
-get_product(productId, region)            # 用户给了商品链接时直接读取；不知道商品时才 search_products(query, region?)
-create_content_draft(mode=original, goal=product_sales, ...)   # 先有条目
-select_product(contentItemId, productId, region?)   # 写入 brief.product；商品图进商品缓存
-get_unit → commerceProducts 里找到这件货和它每张图的 label / description / url
-search_reference_videos(contentItemId, limit=5)
+get_product(productId, region)            # 有确切链接 / ID 时；未知商品才 search_products
+list_units → get_unit                    # 用户选人设，核对其所属单元、语言、市场、face、绑定账号
+search_reference_videos(unitId, personaId, productId, region, limit=5)
+→ 展示 3–5 条参考片：标题、播放、估算收入、链接、适配依据；等用户选片
+import_reference_video(unitId, videoId, region, productId)
+→ pending：按 retryAfterSeconds 重调同参数；ready：取得 referenceVideoId；failed：告知原因、换片
+create_content_draft(mode=replicate, goal=product_sales, unitId, personaIds,
+                     referenceVideoId, durationSeconds, language?)
+select_product(contentItemId, productId, region)
+get_content_context → get_unit           # 取当前 mentions 与 commerceProducts 商品真图
+analyze_reference_video(contentItemId) → get_generation_job 等拆解成功
+search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId)
+按 B 和 replication.md 写表、准备素材、校验保存
+→ 用户确认付费生成 → confirm_storyboard → wait_for_video → get_video
 ```
 
-挑对标：
+同商品候选已按估算收入排序，优先向用户推荐收入较高且适合人设演示方式的片；指标是第三方估算。商品市场必须与单元市场匹配。只有网页链接但不可导入的来源不能假装已经复刻；导入失败不自动切原创。参考片 / 输出时长服从 B 的现有约束。
 
-- 同商品结果已按估算收入从高到低排，**主对标取收入最高的一条**，不要改选播放更高、收入更低的片。
-- 最高一条明显是商家自己的号 → 改用下一条达人片。不要因为商品名里有品牌就把同名片整批丢掉。
-- 同商品不够时会补同类目片：借前三秒、演示方式和价格出现方式，换成本单元的人设和商品图，口播重写。
-- 给用户列 3–5 条（标题、播放、估算收入、链接），写明主对标是哪一条、借它什么。
-- 结果只有网页链接，**不能复刻文件**。用户另外给了 mp4 且同意花钱才走 A / B；否则就是借钩子写原创（C 的后半段）。
+`select_product` 后重新读 context。保留建稿时分配的人设编号；将当前商品图库真实图片加入 product 主体并至少进一镜，不把商品图生成人设身份图。
 
-之后按 C 写表。商品主体只挂适合这一条的图（读每张 `label` / `description`），不要把同一商品的几张图无差别塞进一个主体。
+## 资源列表与确认发布
 
-`select_product` 之后重新取 `get_content_context` 和 `get_unit`，使用当前商品图库。`get_storyboard` 版本 0 的骨架可能没有主体，必须按 context 的 `mentions` 补全人设；新选商品用图库真实图片作为 product 主体，并至少进入一镜。不要把骨架为空或查看页没有分镜误认为建稿失败。
+```
+list_units / get_unit                    # personas 含 ID / role，tiktokAccount 区分 registered / authorized
+list_content_items(unitId?, tiktokAccountId?, page?, pageSize?)
+list_published_videos(unitId?, personaId?, tiktokAccountId?, page?, pageSize?)
+```
+
+账号属于经营单元，配角不能独立绑号。`authorized` 表示存在可用授权，能否挂车还要看 `canPublishShop`、具体商品及发布预检。已发布列表只含经如奕真实通道确认成功的记录，可见性另看 `visibilityStatus`；videoUrl 为空就说明平台尚未提供链接，不能拼接猜测；playbackUrl 可播放实际发布版本，临时链接过期后重新查询。
+
+```
+get_publish_preview(contentItemId, tiktokAccountId)
+→ 展示 videoUrl / viewUrl、contentAssetId 与版本、账号、商品、标题及发布设置
+→ blockers 中授权 / 市场等缺项须先处理；用户确认看过并认可成片，且明确同意发布
+approve_content_item(contentItemId, contentAssetId, explicitConfirm=true)
+publish_video(contentItemId, tiktokAccountId, contentAssetId, productId, region,
+              title, tags, privacyLevel, commercialDisclosure, explicitConfirm=true)
+get_publish_job(publishJobId, tiktokAccountId) → 查询到成功 / 失败 / 结果待核对
+```
+
+一期挂车选公开发布；预览返回默认设置。成片或商品变化则重新预览与确认。`queued`、`running` 只是作业进度，不是已发布；`reconciliationRequired=true` 表示官方提交结果待核对，不重复提交。失败报告原因。审核和生成成功都不能代替真实挂车发布验收。
 
 ## 上传图片的固定动作
 

@@ -1,6 +1,6 @@
 ---
 name: ruyi-eva
-description: Use the Ruyi EVA MCP to create TikTok-style short videos for existing personas/units — creative direction, structured storyboards, subject images (with your own image generation), validation, paid video generation, and downloading the mp4. Covers depth clone, creative replicate, original (playbook-driven), and find-viral-then-replicate for product sales. Use whenever the user wants Ruyi/如奕/EVA videos, storyboards, or cloud video generation via Ruyi MCP tools.
+description: Use the Ruyi EVA MCP to create TikTok-style short videos for existing personas/units — creative direction, structured storyboards, subject images (with your own image generation), validation, paid video generation, and downloading the mp4. Covers depth clone, creative replicate, original (playbook-driven), find-viral-then-replicate for product sales, persona/account resource queries, and explicitly confirmed TikTok Shop publishing. Use whenever the user wants Ruyi/如奕/EVA videos, storyboards, or cloud video generation via Ruyi MCP tools.
 ---
 
 # 如奕 EVA 出片
@@ -10,7 +10,7 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 - **你**：理解需求、定角度、写分镜表、准备主体图（下载参考图、用你自己的生图能力出图、上传挂表）。
 - **如奕（MCP）**：提供单元 / 人设 / 素材 / 配方 / 商品等事实，校验分镜，确认后编译成片提示词并出片。
 
-工具已经接在当前会话里，直接调用。不要 `npm install`、不要自己写 MCP 客户端、不要猜 id、不要找项目源码。本 Skill 和 MCP 返回就是全部规范。
+工具已经接在当前会话里，直接调用。新增的参考片导入与发布流程需要服务端暴露对应工具；缺少时说明需要升级服务端，不要假装调用成功。不要 `npm install`、不要自己写 MCP 客户端、不要猜 id、不要找项目源码。本 Skill 和 MCP 返回就是全部规范。
 
 ## 开工前读哪份
 
@@ -37,7 +37,8 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 8. **付费前询问**：`create_depth_clone`、`confirm_storyboard`、`regenerate_video` 会花钱。先说明将产生费用和本次时长，等用户明确同意再调。你自己生图不经过如奕，不在此列，但图多时也先说一声。
 9. **查看页**：`create_content_draft`、`save_storyboard`、`confirm_storyboard` 返回 `viewUrl` 时立即发给用户；没返回就调 `get_view_link`。不要自己生成本地 HTML 预览。该页只读，所有修改都通过 MCP。
 10. **取片下载**：`wait_for_video`（超时就再调）→ `get_video` → 把 mp4 下载到 `ruyi/<contentItemId>/<filename>`。`regenerate_video` 若只返回 reopen，说明只开了新草稿没入队，要再 `confirm_storyboard`。
-11. **仅做脚本**：用户说不生成视频时，仍完成商品选择、红线检索、分镜、主体素材、校验、保存和保存后复读；结束条件是 `errors=[]`、`mustFix=[]` 且进镜图片都能解析。不要调用 `confirm_storyboard`、`create_depth_clone` 或 `regenerate_video`，也不用等待视频。说明仍是草稿并交付查看链接。
+11. **发布另行确认**：先 `get_publish_preview` 展示这一版成片、目标账号、挂车商品和设置。用户明确认可后 `approve_content_item`，再用预览里的 `contentAssetId`、商品 ID 与市场调用 `publish_video(explicitConfirm=true)`。生成确认不代表发布确认；不得换账号、换商品或降级为普通发片。授权在平台完成；阻塞原因原样告知。提交后 `get_publish_job` 查结果，结果待核对不重复发片。
+12. **仅做脚本**：用户说不生成视频时，仍完成商品选择、红线检索、分镜、主体素材、校验、保存和保存后复读；结束条件是 `errors=[]`、`mustFix=[]` 且进镜图片都能解析。不要调用 `confirm_storyboard`、`create_depth_clone` 或 `regenerate_video`，也不用等待视频。说明仍是草稿并交付查看链接。
 
 用户指定本地 MCP 时使用该本地连接和本地令牌；网页商品链接只提取 `productId` 与 `region`，不沿用线上数据或令牌。接口地址和查看页地址可能端口不同，以 MCP 返回的 `viewUrl` 为准。用户要求隔离重跑时，每轮先建新的工作目录，只在本轮目录下保存 `ruyi/<contentItemId>/`，不读取旧轮的脚本、id 或素材文件；事实重新从 MCP 获取。
 
@@ -51,8 +52,8 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 - **不支持 B2B 获客（`b2b_leads`）和打品项目建稿**：告诉用户回平台「创建视频」处理。
 - **不能改人设 / 单元 / 世界 / 配方**：缺 face、缺配方、要把场景图或常驻道具写进单元 → 去平台人设页。你挂的图只属于这一条内容。
 - **没有平台生图**：图由你自己生成后上传。没有生图能力时只用已有图和用户给的图。
-- **公开爆款检索只给网页链接**，不是视频文件。不要装下载器硬拉片子。
-- **不发布**。成片下载到本地交给用户。
+- **参考视频导入仅支持选品广场来源**：`importAvailable=true` 的片可用 `import_reference_video` 导入；失败或不可取得文件时请用户换片，不装下载器，不改成原创。
+- **不能通过 MCP 绑定或重新授权 TK 账号**：在平台人设页完成。挂车一期沿用美国 / 新加坡通道，配置和授权不足会阻塞；真实发布是否可用以预检及平台结果为准，不能把生成成功当作发布成功。
 
 ## 每轮怎么回用户
 
