@@ -46,11 +46,15 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 
 原创、创意复刻（含找爆款后复刻）写分镜前，单独调用 `search_knowledge({ query: "已知行业 + 目标市场 + 创作主题", categories: ["redline"], unitId })`。不要与案例/拆解混查，不要限定只查单元。检索平台与当前租户可见红线，按 structured 的行业/市场/平台判断适用性，空数组表示不限。block 必须遵守，warn 给风险提醒，参考 rewriteHint 改写。同时遵守账号 `unit.redlines`，不要用一条规则覆盖另一条适用规则。修改商品、市场、主题或宣传表述时重新检索。零命中可继续；工具故障须明确告知，不能声称已完成红线检查。红线由租户管理员在「项目&红线知识库」维护，不复制进 Skill。深度复刻沿用原流程。
 
+## B2B 自动获客复刻（新增 MCP）
+
+用户要 B2B 获客、工厂/采购/品牌业务账号或小九同款自动复刻时，先 tools/list 检查 `quote_content`、`create_b2b_replicate`、`get_content_task`；存在才按 [references/b2b.md](references/b2b.md) 执行。这是平台 Agent 自动写分镜的模式，不走下方 B2C 外部写表流程，不重复生成脚本或图片。缺工具说明需要升级服务端，不自动换成 B2C。
+
 ## MCP 做不到的事（不要假装做了）
 
 - **知识检索是只读的**：`search_knowledge` 可读取可见案例、拆解与红线，不能通过 MCP 写入知识库。通用钩子和结构仍参考 [creative.md](references/creative.md)，口播同时检查 [compliance.md](references/compliance.md)。
-- **不支持 B2B 获客（`b2b_leads`）和打品项目建稿**：告诉用户回平台「创建视频」处理。
-- **不能改人设 / 单元 / 世界 / 配方**：缺 face、缺配方、要把场景图或常驻道具写进单元 → 去平台人设页。你挂的图只属于这一条内容。
+- **B2B 仅走新增自动复刻工具**：普通 `create_content_draft` 仍只支持 B2C；不以它创建 B2B 原创或打品项目，不假装自动模式能做未开放的服务。
+- **不能改 B2C 人物身份 / 世界 / 配方**：缺 face、缺配方、要改人脸或常驻场景 → 去平台处理。B2B 经营资料、分类图片及账号头像仅通过专用限权工具管理，不得借此修改 persona.face。
 - **没有平台生图**：图由你自己生成后上传。没有生图能力时只用已有图和用户给的图。
 - **参考视频导入仅支持选品广场来源**：`importAvailable=true` 的片可用 `import_reference_video` 导入；失败或不可取得文件时请用户换片，不装下载器，不改成原创。
 - **不能通过 MCP 绑定或重新授权 TK 账号**：在平台人设页完成。挂车一期沿用美国 / 新加坡通道，配置和授权不足会阻塞；真实发布是否可用以预检及平台结果为准，不能把生成成功当作发布成功。
