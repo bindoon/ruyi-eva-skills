@@ -147,7 +147,7 @@ attach_subject_image(contentItemId, unitId, assetId, subjectLabel=@图片n, subj
 get_storyboard                                              # 挂图不出新版本，必须刷新本地文件
 ```
 
-单张图不超过 20 MB。`label` 是镜头里用的短名（「白色棉T」），`description` 写图里看得见的特点（「纯白短袖圆领棉T，平铺，无图案」），两项都不能空，MCP 不识图。
+单张图不超过 20 MB。`label` 是镜头里用的短名（「白色棉T」）。`description` 写图里看得见的特点（「纯白短袖圆领棉T，平铺，无图案」）；不传时平台识图补上，传了则原样保存、不再识图。
 
 ## 确认与出片
 
