@@ -114,6 +114,8 @@ search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitI
 
 ## 资源列表与确认发布
 
+领取营销账号、普通视频发布及账号统计见 [managed-accounts.md](managed-accounts.md)；下文发布示例保留原有挂车模式。
+
 ```
 list_units / get_unit                    # personas 含 ID / role，tiktokAccount 区分 registered / authorized
 list_content_items(unitId?, tiktokAccountId?, page?, pageSize?)
