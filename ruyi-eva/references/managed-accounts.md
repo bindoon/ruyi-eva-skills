@@ -38,3 +38,9 @@ queued / running / reconciliationRequired 不能描述成已发布；结果待�
 `list_account_works(tiktokAccountId, page?, pageSize?)` 返回账号作品及播放、点赞、评论数、分享数。此列表可以包含其他入口发布、尚未关联如奕成片的作品；不能把候选作品的效果自动归给本条成片。
 
 `list_published_videos` / `get_publish_job` 只在已确认关联时提供该如奕成片的效果。dataUpdatedAt 是数据源更新时间，syncedAt 是平台读取时间；授权失效或同步异常时说明可能停更。0 是有效数值，空值或空列表不能解释为没有播放。评论正文和回复不在本流程内。
+
+## 找回发布任务与同步状态
+
+`list_publish_jobs(contentItemId)` 返回最近 100 条任务（含处理中/失败），按账号和成片版本匹配。预检的 existingPublishJob 表示同版已有任务；排队、执行中或成功时不再次提交。publish_video 返回后按 retryAfterSeconds 查询 get_publish_job，不等待发布完成才响应用户。
+
+任务与已发布列表返回 metricsStatus / metricsLastError / metricsSyncedAt（syncedAt 同义）。available 只是缓存可读；authorization_required / sync_error 时旧数据仍可用但可能停更；awaiting_association 不能自动猜测关联，not_supported 不能显示为零。Worker 最近 24 小时发过片的账号约每 5 分钟同步，其余约每 30 分钟；供应商数据更新时间可能更早，频繁查询不会加速采集。终态查询建议 300 秒，处理中建议 5 秒。只能展示评论数量，不读取正文或自动回复。
