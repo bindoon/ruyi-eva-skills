@@ -13,6 +13,10 @@
 
 账号归经营单元，配角不能另领。等待库存或需要处理时向用户说明当前状态，不编造账号、不承诺准备时间。账号可发布与数据可同步是独立事实，以 canPublish / canReadMetrics 为准。
 
+## 读取账号信息
+
+`get_unit.tiktokAccount`、`list_units.units[].tiktokAccount` 和 `get_publish_preview.account` 中，托管账号提供 `profile = {handle, displayName, country, status, followers, likes, worksCount}`。顶层 handle/displayName 同样使用最新同步的账号资料；syncedAt 是 EVA 最近同步账号信息的时间，不是 TikTok 数据更新时间。计数 null 表示未知，0 是实际零值；账号获赞数和作品数不能当作某条视频的指标。信息约每五分钟由后台同步，重复查询不会加快源数据采集。非托管账号没有 profile，账号对象为空或没有真实 handle 时不能宣称已绑定。工具名、入参与原 JSON 包装不变，不返回供应商账号 ID、云机编号或凭证。
+
 ## 普通视频发布
 
 明确普通视频与挂车的选择。用户要求挂车时不能自动降级；省略 publishMode 的旧调用仍是挂车。
