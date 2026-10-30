@@ -4,6 +4,8 @@
 
 ## 资料与素材
 
+从 PDF / 产品目录创建时先读 [b2b-catalog.md](b2b-catalog.md)，使用随技能提供的提取脚本。只创建账号时检查下述资料工具即可，无需检查报价、生成或模板工具。
+
 1. `list_units` → `get_unit` 读取真实资料；B2B 单元 `businessMode=b2b` 可无 persona，不要求国籍、出生日期、视觉锤或配方。不得虚构工厂资质、客户、产能。
 2. 用户明确要新账号时用 `create_b2b_account`；修改用 `update_b2b_account`，缺项先补资料，再 `confirm_b2b_account`。不为 B2C 账号改模式，不混用 B2C 人物写入。
 3. 六类图片 portrait/product/factory/logistics/customer_cooperation/company_document 均选填；有图才上传。`create_upload` → PUT 返回 URL → `complete_upload`（label、description 必填），再 `bind_account_references`。原件 customerAssetId 与账号 reference ID 不同，后续生成 assetIds 只用账号 reference ID。
@@ -23,4 +25,4 @@
 11. 最终对外收费以 billing.state=settled 与 chargedAmount 为准；用 `get_video` 刷新签名链接取片。用户取消用 `cancel_content_task`，仍查询最终费用；already_submitted 不承诺立即停止/免费。
 12. 生成授权不包含发布，发布仍按原独立明确确认流程，真实发布可用性以平台预检为准。
 
-新增工具返回 structuredContent 或文本 JSON `{ok:true,data:...}`，错误 isError=true 且 `{ok:false,error:{code,message,retryable,requestId}}`。旧 list_units/get_unit/upload/get_video 保持原格式，不能强制所有工具都有 data。新工具缺失或协议错误时明确说明，不用源码、临时脚本或其它用户凭证绕过。
+新增工具返回 structuredContent 或文本 JSON `{ok:true,data:...}`，错误 isError=true 且 `{ok:false,error:{code,message,retryable,requestId}}`。旧 list_units/get_unit/upload/get_video 保持原格式，不能强制所有工具都有 data。已连接服务缺工具或协议错误时明确说明，不用源码、临时脚本或其它用户凭证绕过。会话未加载连接时，按 SKILL.md 的官方 SDK 与已有成员凭证规则处理，不把正常鉴权的 SDK 调用当作缺工具的绕过方式。

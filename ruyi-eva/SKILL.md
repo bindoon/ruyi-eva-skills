@@ -1,6 +1,6 @@
 ---
 name: ruyi-eva
-description: Use the Ruyi EVA MCP to create TikTok-style short videos for existing personas/units — creative direction, structured storyboards, subject images (with your own image generation), validation, paid video generation, and downloading the mp4. Covers depth clone, creative replicate, original (playbook-driven), find-viral-then-replicate for product sales, persona/account resource queries, marketing account allocation and metrics, and explicitly confirmed ordinary or TikTok Shop publishing. Use whenever the user wants Ruyi/如奕/EVA videos, storyboards, or cloud video generation via Ruyi MCP tools.
+description: Use Ruyi EVA MCP for short videos, storyboards, B2B business accounts and catalogue reference images. Covers B2B account creation from supplied PDFs, classified image uploads, automatic B2B replication, B2C original/replicate/depth-clone workflows, marketing accounts, metrics and explicitly confirmed publishing. Use for Ruyi/如奕/EVA account or video requests; B2C character identity editing stays on the platform.
 ---
 
 # 如奕 EVA 出片
@@ -10,13 +10,14 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 - **你**：理解需求、定角度、写分镜表、准备主体图（下载参考图、用你自己的生图能力出图、上传挂表）。
 - **如奕（MCP）**：提供单元 / 人设 / 素材 / 配方 / 商品等事实，校验分镜，确认后编译成片提示词并出片。
 
-工具已经接在当前会话里，直接调用。新增的参考片导入与发布流程需要服务端暴露对应工具；缺少时说明需要升级服务端，不要假装调用成功。不要 `npm install`、不要自己写 MCP 客户端、不要猜 id、不要找项目源码。本 Skill 和 MCP 返回就是全部规范。
+先检查当前会话可用的 MCP 工具，不假定已经连接。缺连接与已连接服务缺工具分别说明；前者需要配置连接，后者需要升级服务端。优先用会话工具；当前宿主未加载连接但用户已授权使用本机配置时，可用现成官方 MCP SDK 与该用户已有成员凭证正常连接，先 tools/list，再依实际 schema 调用。不要自造协议、猜 id、读取数据库或从源码绕过接口，也不使用其他用户 / 应用管理凭证。凭证只在内存读取，不打印或写入任务产物。用户明确要求维护技能 / 项目时可以检查相应源码。目录 PDF 的本地提取依赖见对应参考，不受视频流程的安装限制。
 
 ## 开工前读哪份
 
 | 你要做 | 先读 |
 | --- | --- |
 | 领取营销账号、普通视频发布和查效果 | [references/managed-accounts.md](references/managed-accounts.md) |
+| 创建 / 补全 B2B 账号、从 PDF 提取真实资料与图片 | [references/b2b.md](references/b2b.md)；有 PDF 时再读 [references/b2b-catalog.md](references/b2b-catalog.md) |
 | 选流程、看工具顺序 | [references/workflows.md](references/workflows.md) |
 | 定方向：角度、钩子、节奏、养号 / 带货 / 剧情片 | [references/creative.md](references/creative.md) |
 | 写 / 改分镜表（字段分工、素材职责、动作状态、写作自查、校验） | [references/storyboard.md](references/storyboard.md) |
@@ -49,7 +50,7 @@ description: Use the Ruyi EVA MCP to create TikTok-style short videos for existi
 
 ## B2B 自动获客复刻（新增 MCP）
 
-用户要 B2B 获客、工厂/采购/品牌业务账号或小九同款自动复刻时，先 tools/list 检查 `quote_content`、`create_b2b_replicate`、`get_content_task`；存在才按 [references/b2b.md](references/b2b.md) 执行。这是平台 Agent 自动写分镜的模式，不走下方 B2C 外部写表流程，不重复生成脚本或图片。缺工具说明需要升级服务端，不自动换成 B2C。
+用户要 B2B 账号 / 人设时，按 [references/b2b.md](references/b2b.md) 检查账号创建、资料和素材工具；只建账号不需要视频报价与生成工具。用户提供产品目录时，按 [references/b2b-catalog.md](references/b2b-catalog.md) 提取并核对事实和图片。B2B 自动复刻另检查 `quote_content`、`create_b2b_replicate`、`get_content_task`，平台 Agent 自动写分镜，外部不重复写表或生图。缺连接先完成本地材料；用户授权使用平台网页时可经正常登录页面完成，不能绕过鉴权。仅建立账号不代表授权生成视频或发布。
 
 ## MCP 做不到的事（不要假装做了）
 
