@@ -1,6 +1,6 @@
 ---
 name: ruyi-eva
-description: Use Ruyi EVA MCP for short videos, storyboards, B2B business accounts and catalogue reference images. Covers B2B account creation from supplied PDFs, classified image uploads, automatic B2B replication, B2C original/replicate/depth-clone workflows, marketing accounts, metrics and explicitly confirmed publishing. Use for Ruyi/如奕/EVA account or video requests; B2C character identity editing stays on the platform.
+description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, project documents and catalogue images. Covers B2B account/project creation, revisioned business documents, existing account image imports, automatic B2B replication, B2C original/replicate/depth-clone workflows, marketing accounts, metrics and explicitly confirmed publishing. Use for Ruyi/如奕/EVA account, project or video requests; B2C character identity editing stays on the platform.
 ---
 
 # 如奕 EVA 出片
@@ -18,6 +18,7 @@ description: Use Ruyi EVA MCP for short videos, storyboards, B2B business accoun
 | --- | --- |
 | 领取营销账号、普通视频发布和查效果 | [references/managed-accounts.md](references/managed-accounts.md) |
 | 创建 / 补全 B2B 账号、从 PDF 提取真实资料与图片 | [references/b2b.md](references/b2b.md)；有 PDF 时再读 [references/b2b-catalog.md](references/b2b-catalog.md) |
+| 创建 B2B 打品文档项目、挂已有账号图片 | [references/b2b-projects.md](references/b2b-projects.md) |
 | 选流程、看工具顺序 | [references/workflows.md](references/workflows.md) |
 | 定方向：角度、钩子、节奏、养号 / 带货 / 剧情片 | [references/creative.md](references/creative.md) |
 | 写 / 改分镜表（字段分工、素材职责、动作状态、写作自查、校验） | [references/storyboard.md](references/storyboard.md) |
@@ -55,7 +56,7 @@ description: Use Ruyi EVA MCP for short videos, storyboards, B2B business accoun
 ## MCP 做不到的事（不要假装做了）
 
 - **知识检索是只读的**：`search_knowledge` 可读取可见案例、拆解与红线，不能通过 MCP 写入知识库。通用钩子和结构仍参考 [creative.md](references/creative.md)，口播同时检查 [compliance.md](references/compliance.md)。
-- **B2B 仅走新增自动复刻工具**：普通 `create_content_draft` 仍只支持 B2C；不以它创建 B2B 原创或打品项目，不假装自动模式能做未开放的服务。
+- **B2B 视频仅走新增自动复刻工具**：普通 `create_content_draft` 仍只支持 B2C，不以它创建 B2B 视频。B2B 打品文档项目使用独立的项目工具，见 [references/b2b-projects.md](references/b2b-projects.md)，不等于启动视频或模型。
 - **不能改 B2C 人物身份 / 世界 / 配方**：缺 face、缺配方、要改人脸或常驻场景 → 去平台处理。B2B 经营资料、分类图片及账号头像仅通过专用限权工具管理，不得借此修改 persona.face。
 - **没有平台生图**：图由你自己生成后上传。没有生图能力时只用已有图和用户给的图。
 - **参考视频导入仅支持选品广场来源**：`importAvailable=true` 的片可用 `import_reference_video` 导入；失败或不可取得文件时请用户换片，不装下载器，不改成原创。
