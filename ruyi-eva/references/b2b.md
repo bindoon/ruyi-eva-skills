@@ -14,7 +14,7 @@
 ## 选片、报价与授权
 
 5. `list_viral_videos` / `get_viral_video` 选平台已拆解公共模板；不是 `search_reference_videos` 的商品广场检索。已拆解模板不再 analyze，不产生重复拆解费用。
-6. `quote_content({operation:"b2b_replicate",request:{unitId,viralVideoId,model,resolution,durationSeconds,...}})`，model、resolution、durationSeconds、ratio 均可省略：服务端默认 WAN 3.0 标准版、480p、9:16，时长取参考视频实际时长与模型上限及 30 秒的较小值，不固定 15/30 档位。用户指定则原样传入，非法规格会报错。展示报价返回的 resolvedParameters，不逐项追问默认参数。
+6. `quote_content({operation:"b2b_replicate",request:{unitId,viralVideoId,model,resolution,durationSeconds,...}})`，model、resolution、durationSeconds、ratio 均可省略：服务端默认 Seedance 2.0 Fast（Seedance-2.0-Fast-VIP）、480p、9:16，时长取参考视频实际时长与模型上限（Fast 为 15 秒）及 30 秒的较小值，不固定 15/30 档位。用户指定则原样传入，非法规格会报错。展示报价返回的 resolvedParameters，不逐项追问默认参数。
 7. 明确展示对外固定视频金额、Agent 创作区间、总区间和单位；`rangeIsCap=false` 不是硬封顶，报价未开通/未知必须说明，不编价格，也不透露内部成本。取得本次明确生成授权后才提交；询价、持有 SK、用户要脚本均不等于同意付费视频。
 8. `create_b2b_replicate` 带相同业务参数、quoteId、稳定 idempotencyKey、authorizeAutoGeneration=true。报价过期或参数/素材变了要重新询价；结果不明只用原键原参数恢复，不能换键重复付费。
 
