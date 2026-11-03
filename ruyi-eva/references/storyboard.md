@@ -2,7 +2,7 @@
 
 一张表 = 脚本卡 `card` + 主体 `subjects` + 逐镜 `scenes`，外加 `hookScript` / `cta` / `language` / `title` / `caption` / `hashtags`。完整 JSON Schema 在 MCP 资源 `ruyi://schema/storyboard`，与服务端校验一致。
 
-你只写表。确认时如奕把表**编译**成成片提示词送生视频，你不写整段时间轴、不写 model / prompt / engine。
+你只写表。title 写短标题，card.synopsis 用1–3句中文描述当前剧情的开始、变化与结尾；改剧情时同步。确认时如奕按「标题 → 参考图分工 → 剧情概述 → 拍摄设定 → 动作时间线 → 必要约束」**编译**成片提示词，你不另写整段时间轴、不写 model / prompt / engine。
 
 ## 写实质感
 
@@ -29,13 +29,14 @@
 
 | 字段 | 填什么 |
 | --- | --- |
+| `synopsis` | 1–3句中文剧情概述，与当前分镜一致，不写分析和备选 |
 | `creativeAngle` | 选定角度，一句话（必填） |
 | `angleRationale` | 为什么这个角度对这个账号 / 这个品成立；对标信息写这里 |
 | `purchaseBarrier` / `coreTrigger` | 带货必填：观众不买的理由 / 打穿它的心理触发。养号不填 |
 | `emotionalArc` | 三段式（必填） |
 | `hookType` | 只选一种（必填），见 creative.md 十种钩子 |
 | `visualStyle` / `visualAnchor` | 全局风格一句 / 全片反复出现的画面锚点 |
-| `shootingMode` | `single_take` 一镜到底，或 `edited` 多镜剪辑。新脚本必须选。一镜到底的时间段是同一镜头里的动作节拍，不是切镜 |
+| `shootingMode` | `auto` 系统按分镜安排；`single_take` 一镜到底，或 `edited` 多镜剪辑。按需求自行选择，不追问用户。一镜到底的时间段是同一镜头里的动作节拍，不是切镜 |
 | `continuityNotes` | 进出场方向、空间位置、动作和道具状态承接，最多 6 条，会写进成片 prompt。一镜到底至少 1 条 |
 | `narrator` | `{ language, toneInstruction, voiceLabel }`；有口播时 `language` 必须有 |
 | `shootingNotes` | 2–4 条 |
@@ -152,10 +153,13 @@ subjectLabels：[@图片1, @图片2]
 ### 编译出来长这样（只用来理解，不要自己写）
 
 ```
-风格：<card.visualStyle>
+《<title>》
+参考素材：<subjects 的编号、名字和 usage>
+剧情概述：<card.synopsis>
+拍摄设定：<时长和画幅>
 拍摄方式：全片一镜到底。以下时间段是同一个连续镜头内的动作节拍，不代表切镜……
+风格：<card.visualStyle>
 连续性要求：<continuityNotes>
-参考素材：@图片1 = Coco（角色外观参考）；@图片3 = 厨房（场景空间参考，不是待插入的静帧）
 动作时间轴（时间为节奏指引）：
 [0-2.5s] @图片1 <shotPrompt>。镜头：<camera>。声音：<audio>。口播（en）："…"
 禁止：<negativeDirectives>
@@ -191,16 +195,15 @@ subjectLabels：[@图片1, @图片2]
 
 ## 保存前写作自查
 
-检查素材对应与职责、动作容量、必要结束状态、人物数量与道具归属、机位和拍摄方式、声音取舍及语言。此处是创作自查，不新增服务端硬门。validate → save → get_storyboard 复读；表与图就绪后沿用 review_storyboard：只按原文证据修一次再查一次，剩余建议交给用户。改表或换图后旧检查作废，故障不得说通过。
+检查素材对应与职责、动作容量、必要结束状态、人物数量与道具归属、机位和拍摄方式、声音取舍及语言。此处是创作自查，不新增服务端硬门。validate → save → get_storyboard 复读，清零阻塞问题后交付。起草时自行检查动作承接，不调用独立审阅，不为主观建议反复改稿。基础校验通过不代表成片效果保证。
 
 ## 系统会拦的
 
 | 级别 | 情形 |
 | --- | --- |
-| 拒绝保存 | 各镜时长之和 ≠ brief 时长；时长不是 0.5 倍数；单镜超 15 秒；一镜到底总时长或参考图超过单段上限；`subjectLabels` 指向不存在的主体；`shotPrompt` 写了不在 `subjectLabels` 里的编号；`shotPrompt` 写字幕 / Logo / 价格 / 购物车；主体编号重复或非法；音色多于 1 个；建稿 mentions 丢失或没进镜；单段参考图超 30 张；改了锁定镜；新编号未经 attach |
-| `mustFix`（存得进去，确认前必须清） | 口播超时；`shotPrompt` 缺失或没点名本镜人物 / 商品；主体没进任何镜；带货没有商品主体；有口播没语言；与近作角度 + 钩子重复或变量取值完全相同 |
-| 连续性检查（不阻止生成） | `review_storyboard` 看最终编译 prompt。只修有原文证据的问题一次，再查一次。改表或换图后旧结果作废。检查失败不得说通过 |
-| `warnings`（转成选项给用户） | 支柱连用 3 条、变量池外新值等 |
+| 拒绝保存 | 各镜时长之和 ≠ brief 时长；单镜超所选模型单段上限；一镜到底总时长或参考图超过单段上限；`subjectLabels` 指向不存在的主体；`shotPrompt` 写了不在 `subjectLabels` 里的编号；主体编号重复或非法；音色多于 1 个；建稿 mentions 丢失或没进镜；单段参考图超 30 张；改了锁定镜；新编号未经 attach |
+| `mustFix`（存得进去，确认前必须清） | 口播明显超时；`shotPrompt` 缺失或没点名本镜人物 / 商品；主体没进任何镜；带货没有商品主体；有口播没语言；与近作角度 + 钩子重复或变量取值完全相同 |
+| `warnings`（仅需取舍时简要说明） | 轻微口播超时；画面提到字幕 / Logo / 价格 / 购物车；支柱连用 3 条、变量池外新值等 |
 | 确认时额外拦 | 进镜主体没有图；带货商品主体没有图 |
 
 ## 创作红线自查
