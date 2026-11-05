@@ -1,6 +1,6 @@
 ---
 name: ruyi-eva
-description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, project documents and catalogue images. Covers B2B account/project creation, revisioned business documents, existing account image imports, automatic B2B replication, B2C original/replicate/depth-clone workflows, marketing accounts, metrics and explicitly confirmed publishing. Use for Ruyi/如奕/EVA account, project or video requests; B2C character identity editing stays on the platform.
+description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, project documents and catalogue images. Covers B2B account/project creation, revisioned business documents, existing account image imports, automatic B2B replication, B2C original/replicate/depth-clone workflows, marketing accounts, self-owned video uploads, simple publishing profiles, metrics and explicitly confirmed publishing. Use for Ruyi/如奕/EVA account, project or video requests; B2C character identity editing stays on the platform.
 ---
 
 # 如奕 EVA 出片
@@ -16,6 +16,7 @@ description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, proje
 
 | 你要做 | 先读 |
 | --- | --- |
+| 用户已有成片，只上传和发布；创建简版人设 | [references/uploaded-videos.md](references/uploaded-videos.md) |
 | 领取营销账号、普通视频发布和查效果 | [references/managed-accounts.md](references/managed-accounts.md) |
 | 创建 / 补全 B2B 账号、从 PDF 提取真实资料与图片 | [references/b2b.md](references/b2b.md)；有 PDF 时再读 [references/b2b-catalog.md](references/b2b-catalog.md) |
 | 创建 B2B 打品文档项目、挂已有账号图片 | [references/b2b-projects.md](references/b2b-projects.md) |
@@ -25,6 +26,8 @@ description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, proje
 | 主体图：选图、下载参考、自己生图、换装、上传挂表 | [references/subject-images.md](references/subject-images.md) |
 | 创意复刻：拆解怎么落到新分镜 | [references/replication.md](references/replication.md) |
 | 写口播 / 字幕 / CTA | [references/compliance.md](references/compliance.md) |
+
+用户已有成片时只走上传发布，不要求配方、不写分镜、不调用拆解或生成；账号授权、绑定和解绑提示到平台操作。
 
 写分镜前至少读完 `creative.md` 和 `storyboard.md`；要出图再读 `subject-images.md`。
 
