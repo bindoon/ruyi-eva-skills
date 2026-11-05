@@ -39,7 +39,7 @@
 | `shootingMode` | `auto` 系统按分镜安排；`single_take` 一镜到底，或 `edited` 多镜剪辑。按需求自行选择，不追问用户。一镜到底的时间段是同一镜头里的动作节拍，不是切镜 |
 | `continuityNotes` | 进出场方向、空间位置、动作和道具状态承接，最多 6 条，会写进成片 prompt。一镜到底至少 1 条 |
 | `narrator` | `{ language, toneInstruction, voiceLabel }`；有口播时 `language` 必须有 |
-| `shootingNotes` | 2–4 条 |
+| `shootingNotes` | 按需供拍摄 / 后期查看，不进入成片提示词；必须生成的要求放到实际逐镜或连续性字段 |
 | `negativeDirectives` | 全片禁项，最多 6 条 |
 | `pillar` | 单元内容支柱原名 |
 | `variables` | 原创：配方每个变量的取值 `{ 变量名: 取值 }` |
@@ -53,7 +53,7 @@
 | `label` | `@图片n` 或 `@音频n` |
 | `kind` | `person` 人设/角色 · `product` 商品 · `scene` 场景 · `voice` 音色 · `style` 穿搭 / 造型参考（不是第二个人，脸仍用人设） |
 | `name` | 短名（「Coco」「多效抗衰润肤棒」「客厅」）；mentions 里的照抄 `subject` |
-| `role` | 这个主体在片里干什么 |
+| `role` | 片中职责及互动对象，会与 usage 一起进入成片提示词 |
 | `description` | person：人设外貌（从 `soul.appearance` 抄）；穿搭只改衣服词，不要换成参考图里另一个人。product：只抄商品名 + 卖点 + 该图 `description`，**禁止自补颜色 / 材质 / 五金 / Logo** |
 | `usage` | 用户用途原样保留；未填时按图写参考属性，见下方字段分工 |
 | `source` | `persona_pointer` 人设 face · `unit_library` 单元库 / 商品库 · `session_upload` 用户这次给的图 · `generated` 你生成的图 · `reference_only` 原片有、我们还没图 |
@@ -102,6 +102,13 @@
 不要传 `index`、`estimatedSpeechSeconds`，服务端会算。
 
 ## 逐镜通用框架
+
+先确定全片依据，再写逐镜：主体各自做什么、空间关系、开场状态、光线，以及哪些信息在何时被观众看见。简单片只写必要信息，不增加另一份报告。
+
+- `subjects.role` 写片中职责及互动对象；`usage` 写采用哪些图像属性，容易误用时补不采用的部分，如「只参考道具外观，不采用原图背景」。人物身份仍只用该角色 face。
+- 第一镜 `shotPrompt` 写清开场位置、姿态、持物和可见范围；持续不变的相对位置、道具材质与归属放 `continuityNotes`，光线色调放 `visualStyle`。空间布局可以完整规划，镜头不必在开场全景展示。
+- 有悬念或反转时，在相关镜的 `shotPrompt` / `camera` 写明揭晓前可见什么、通过何种遮挡或画外构图隐藏什么、哪一镜首次展示关键对象；`negativeDirectives` 补禁止提前泄露。只写「禁止提前全景」不够，近景也可能泄底。概述可以交代结局，逐镜必须保留揭晓顺序。
+- 必须影响成片的要求放入上述字段；`shootingNotes` 仅供拍摄或后期查看，不进入生成提示词。没有转场就省略，不逐镜填「转场：无」。
 
 每镜共用「时长 + 画面 + 运镜 + 声音 + 台词 + 素材」。故事线和镜头顺序按创作依据安排，不统一套三段式。
 
@@ -154,7 +161,7 @@ subjectLabels：[@图片1, @图片2]
 
 ```
 《<title>》
-参考素材：<subjects 的编号、名字和 usage>
+参考素材：<subjects 的编号、名字、role 和 usage>
 剧情概述：<card.synopsis>
 拍摄设定：<时长和画幅>
 拍摄方式：全片一镜到底。以下时间段是同一个连续镜头内的动作节拍，不代表切镜……
