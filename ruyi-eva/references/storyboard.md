@@ -1,5 +1,24 @@
 # 分镜表
 
+## 文本脚本
+
+以 tools/list 返回的 schema 为准。支持 text 的服务可在 save_storyboard 中传入如下请求。
+
+```json
+{
+  "contentItemId": "内容 UUID",
+  "baseVersion": 0,
+  "text": {
+    "title": "蓝色杯子的工艺",
+    "shootingMode": "edited",
+    "prompt": "窗边自然光下，镜头从 @图片1 的杯口缓慢移到杯柄。保留实物颜色和轮廓。"
+  }
+}
+```
+
+已有版本带最新 baseVersion。短片使用 prompt，长片可用 segments 明确每次生成的正文和时长。继承已选素材，正文中引用稳定的 @ 编号。saved 表示已保存，mustFix 列出生成前需要处理的问题。下面的结构化表格示例用于旧服务与历史稿件。
+
+
 一张表 = 脚本卡 `card` + 主体 `subjects` + 逐镜 `scenes`，外加 `hookScript` / `cta` / `language` / `title` / `caption` / `hashtags`。完整 JSON Schema 在 MCP 资源 `ruyi://schema/storyboard`，与服务端校验一致。
 
 你只写表。title 写短标题，card.synopsis 用1–3句中文描述当前剧情的开始、变化与结尾；改剧情时同步。确认时如奕按「标题 → 参考图分工 → 剧情概述 → 拍摄设定 → 动作时间线 → 必要约束」**编译**成片提示词，你不另写整段时间轴、不写 model / prompt / engine。

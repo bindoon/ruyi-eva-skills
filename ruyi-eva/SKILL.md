@@ -36,7 +36,7 @@ description: Use Ruyi EVA MCP for short videos, storyboards, B2B accounts, proje
 1. **先查再写**：`list_units` → `get_unit`。人设外貌、口头禅、语气、账号语言、市场、红线、内容支柱、场景、商品卖点全部以 MCP 返回为准，**不编**。
 2. **原创必须有生效配方**：先按商品、市场、语言和该 goal 的配方筛选单元，再建稿。用户让你自行选单元时，直接选择适用候选；某个候选没配方就继续检查其他候选，不要先建错 goal 的草稿。全部候选都不适用时，说明具体缺项，请用户在平台补对应配方，不要临场推导结构。复刻不需要配方。
 3. **先定方向再写表**：原创给用户 2–3 个过了爆款自检的角度，等用户选；用户说「直接写」「自行选择」「继续直到脚本完成」时自行选角度并继续。复刻不问，直接按拆解写。
-4. **分镜整份编辑**：`get_storyboard` 落成本地 `ruyi/<contentItemId>/storyboard.json` → 整份改 → `validate_storyboard` → `save_storyboard`（带正确 `baseVersion`）。冲突时以服务端最新版为底合并再交。`mustFix` 必须清零才能确认。
+4. **脚本编辑**。用 `get_storyboard` 读取最新版本。当前工具支持 `text` 时，用 `save_storyboard` 提交文本和 `baseVersion`。保存后检查 `mustFix`，按提示补齐生成所需条件。冲突时重读并合并已有修改。
 5. **建稿时分配的 `@图片n` 不能丢**：`get_content_context.mentions` 里的每一条都要写进 `subjects`（编号、`referenceAssetIds`、`personaId` 照抄），并至少进一镜 `subjectLabels`。
 6. **人脸不能换**：人设主体只用该角色已有 face。用户要换脸 → 告诉他「人脸不能换，请到平台人设页处理」。人物图必须拿 face 作参考生成；你的生图不能带参考图时，**不要生成人物图**。
 7. **商品图不生**：带货只用 `commerceProducts` 里的真图；缺图就让用户补，不得让模型凭文字画商品，也不得把带货改写成生活方式片。
