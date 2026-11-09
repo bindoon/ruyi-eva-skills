@@ -49,7 +49,7 @@
 
 ## 素材职责
 
-选图后在 subjects.usage 区分身份、服装、道具外观与场景空间；用户用途原样保留。换装图只负责服装，身份仍由角色 face 定义；场景图只参考空间与光线，不引入图中人物。每镜只挂需要的主体，不把全部素材塞进每镜。
+素材职责见 [正文写法](storyboard.md#正文写法)。文本稿在正文中交代用途，补充素材可填写 `text.materials[].usage`。结构化稿用 `subjects[].usage`。以下换装和分镜图的逐镜字段适用于结构化稿，文本稿直接用稳定编号引用同一张图。
 
 ## 主体图 prompt
 
@@ -83,11 +83,11 @@
 
 ## 挂图规则
 
-- `attach_subject_image` 按 `subjectLabel` 钉图：表里已有这一行（非人设）就原地把 `referenceAssetIds[0]` 换成新图；没有这一行就追加一个新主体，但**不会**写进任何镜，你要刷新后自己把它加进相关镜的 `subjectLabels` 和 `shotPrompt` 再保存。
-- 推荐顺序：第 1 版就把要生图的主体行写好（`reference_only`），图到了再 attach 到这个编号，不用再改镜。
+- 文本稿可先在正文引用待补编号，上传并绑定后重读最新稿，补图可能增加版本号。如果新图还未绑定到正文，按 [文本脚本](storyboard.md#文本脚本) 用 `text.materials` 保存对应编号和 `boundAssetId`。
+- 结构化稿可先写待补主体（`reference_only`），图到了按 `subjectLabel` 绑定。新增主体需要将编号写进相关镜的 `subjectLabels`，人物或商品在 `shotPrompt` 点名。
 - 人设主体（带 `personaId` 的 person）attach 会被拒，人脸不能换。
 - `subjectKind` 只在追加新行时用：`person`（非人设的活体，如宠物）、`product`（静物道具）、`style`（穿搭）。场景图请先在表里写好 `kind=scene` 的行，再按编号 attach。
-- 单段最多 30 张参考图（成片接口上限）。超过就请用户少挂几张。
+- 图片数量按本次模型单段上限检查，超限时减少参考图。
 
 ## 写实底图
 

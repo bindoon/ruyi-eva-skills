@@ -1,26 +1,7 @@
-# 口播合规（TikTok / TikTok Shop）
+# 口播与画面文字
 
-写 `voiceover` / `voiceoverZh` / `onScreenText` / `hookScript` / `cta` / `caption` 时过本表。面向 TikTok 和 TikTok Shop，不是国内广告法。命中就改词再交表，不要把红线词留给用户改。
+按 [创作红线](../SKILL.md#创作红线) 检索适用规则，同时核对当前账号的 `unit.redlines`。检查台词、钩子、字幕、购买引导和发布文案。
 
-原创与创意复刻写分镜前，单独调用 `search_knowledge`，`categories: ["redline"]`，query 带行业、市场与主题。按 structured 的行业/市场/平台判断适用性，空数组不限；block 必须遵守，warn 给风险提醒，参考 rewriteHint 改写。修改商品/市场/主题/宣传表述后重新检索。零命中可继续；故障须明确告知，不能声称已完成红线检查。
+外观、成分、数字、价格、折扣、认证、疗效与退款承诺须有当前资料依据。通用案例与参考片不能证明本商品效果，生成的演示不能当实测。按目标市场说自然口语，TikTok Shop 挂车可用 `shop the bag` 等与实际入口相符的表达，养号落在角色固定结尾。
 
-同时读 `get_unit.unit.redlines`：这是本账号自己的红线（不能说的话、不能拍的东西），优先级高于下面的通用规则。
-
-## 不能写
-
-- 治病 / 治愈 / 替代药物 / 诊断；减肥「溶脂」「一周瘦 x 斤」——brief 没有且拍不出来就不要写。
-- `clinically proven` / `dermatologist-approved` / `FDA approved` / 医生推荐 / 医院推荐——brief 没有就不要写。
-- `guaranteed` / 无效退款 / `100% works`——brief 没有就不要写。
-- 编价格、折扣、倒计时、销量、评分、认证徽章。
-
-## 可以写
-
-- 第一人称感受（`best one I've tried`），以及 brief 里的成分名。
-- 看得见的前后对比（同一部位、同一光线）。
-- brief / 商品资料里的价格照抄即可。
-
-## CTA
-
-- 挂车：`shop the bag` / `it's on my storefront`。不要说「链接在下面」（那是主页链接，不是 Shop）。
-- 养号：落在固定结尾，不引导购买。
-- 不念卖点列表，不用 TV 广告腔；中文口播也不要漏进「家人们赶紧下单」这种国内带货腔。
+默认不添加字幕、标题、贴纸或文字浮层。口播和字幕分别判断，旧稿或拆解中的文字不构成用户要求。用户明确要求的逐字字幕交给后期，实物已有标识按素材保留。

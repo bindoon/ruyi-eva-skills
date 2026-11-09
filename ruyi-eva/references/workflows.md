@@ -1,8 +1,8 @@
 # 出片流程
 
-出片流程共用同一套「读事实 → 定方向 → 写表 → 主体图 → 校验保存 → 付费确认 → 取片」。工作目录统一用 `ruyi/<contentItemId>/`：`storyboard.json`、`refs/`（下载的参考图）、`images/`（你生成的图）、成片 mp4 都放这里。
+出片流程为「读事实 → 定方向 → 写稿 → 准备素材 → 校验保存 → 付费确认 → 取片」。本地脚本、参考图、生成图与成片放在 `ruyi/<contentItemId>/`。
 
-用户只要脚本时，完成到「主体图 → 校验保存 → get_storyboard 复读」即结束；不要确认入队。指定隔离工作目录时，上述相对路径放在本轮的新目录内。
+按 [脚本与分镜](storyboard.md) 选择文本或结构化流程。用户只要脚本时，保存并用 `get_storyboard` 复读后交付草稿链接。指定隔离工作目录时，将相对路径放在本轮的新目录内。
 
 ## 选哪条
 
@@ -24,7 +24,7 @@ get_unit(unitId)
 
 用户给商品链接时，先 `get_product(productId, region)` 读确切商品；不要把数字 ID 当关键词传给 `search_products`，关键词检索失败不代表商品不存在。用户让你自行找单元时，先读目标商品与市场，再筛选 `list_units` 里该 goal 有生效配方的候选，逐个 `get_unit` 核对配方适用性及人设 face；确定后才建稿。别把穿搭配方硬套成护肤，也别借 `persona_ip` 配方建带货。缺配方是平台准备项，MCP 不能写配方；报告前先排查其他适用候选。
 
-原创和创意复刻写分镜前单独检索红线，修改商品/市场/主题/宣传表述后再查。平台与本租户规则共同参考，同时遵守账号 redlines；按适用范围判断，block 遵守、warn 提醒，零命中可继续，故障须告知。
+原创和创意复刻按 [创作红线](../SKILL.md#创作红线) 单独检索红线。
 
 从 `get_unit` 读并记下：
 
@@ -61,7 +61,7 @@ create_content_draft(mode=replicate, unitId, goal, referenceVideoId, personaIds,
 analyze_reference_video(contentItemId) → 轮询 get_generation_job 到 succeeded / reused
 get_content_context                       # referenceBreakdown + mentions + 素材
 search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId=unitId)
-get_storyboard → 按 replication.md 写表 → validate → save
+get_storyboard → 按 replication.md 写稿 → 按 storyboard.md 校验保存
 按 subject-images.md 补图 → attach_subject_image → get_storyboard 刷新
 → 说明费用，等用户同意
 confirm_storyboard → wait_for_video → get_video → 下载
@@ -79,14 +79,14 @@ create_content_draft(mode=original, unitId, goal, personaIds, productAssetIds?, 
 get_content_context                       # playbook + recentEpisodes + mentions
 search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitId=unitId)
 按 creative.md 定方向：盘点近作 → 2–3 个角度 → 等用户选
-get_storyboard → 写表（套配方，变量写进 card.variables）→ validate → save
+get_storyboard → 按配方写稿 → 按 storyboard.md 校验保存
 按 subject-images.md 补图 → attach → 刷新
 → 说明费用，等用户同意
 confirm_storyboard → wait_for_video → get_video → 下载
 ```
 
 - `note` 写选定角度的一句话说明（例如「在便利店被店员认出：口头禅接反转」）；不写就用配方默认说明。
-- 原创总时长最长 60 秒，超过单段上限时服务端在镜头边界自动切段再拼接；单镜不能超过 15 秒。默认 15 秒。
+- 原创总时长最长 60 秒，默认 15 秒。允许多镜且超过模型单段上限时，文本稿明确提供生成段，结构化稿由系统在镜头边界切段。一镜到底按单次生成规格写。
 
 ## D. 推荐爆款后创意复刻（带货）
 
@@ -111,7 +111,7 @@ search_knowledge(query="行业 + 市场 + 主题", categories=["redline"], unitI
 
 同商品候选已按估算收入排序，优先向用户推荐收入较高且适合人设演示方式的片；指标是第三方估算。商品市场必须与单元市场匹配。只有网页链接但不可导入的来源不能假装已经复刻；导入失败不自动切原创。参考片 / 输出时长服从 B 的现有约束。
 
-`select_product` 后重新读 context。保留建稿时分配的人设编号；将当前商品图库真实图片加入 product 主体并至少进一镜，不把商品图生成人设身份图。
+`select_product` 后重新读 context，保留建稿时分配的角色编号。正文引用当前商品真图，结构化稿同时将商品作为 `product` 主体写进所用镜头。
 
 ## 资源列表与确认发布
 
@@ -144,14 +144,14 @@ create_upload(kind=image, unitId, contentType=image/png)   # 返回 uploadId / p
 curl -X PUT -H "Content-Type: image/png" --data-binary @ruyi/<id>/images/xxx.png "<putUrl>"
 complete_upload(uploadId, kind=image, label=<短名>, description=<看得见的特点>)
 attach_subject_image(contentItemId, unitId, assetId, subjectLabel=@图片n, subjectKind?, label?)
-get_storyboard                                              # 挂图不出新版本，必须刷新本地文件
+get_storyboard                                              # 核对最新版本和素材绑定
 ```
 
 单张图不超过 20 MB。`label` 是镜头里用的短名（「白色棉T」）。`description` 写图里看得见的特点（「纯白短袖圆领棉T，平铺，无图案」）；不传时平台识图补上，传了则原样保存、不再识图。
 
 ## 确认与出片
 
-- 确认前最后一次 `validate_storyboard`：`errors` 和 `mustFix` 都为空；所有进镜的主体都有图；带货有商品图。
+- 确认前核对保存结果无 `mustFix`，所有用到的素材都能解析，带货有商品图。结构化稿另外检查 `validate_storyboard` 的 `errors`。
 - 起草时自行检查动作承接；保存并复读后直接交付，不调用独立审阅。基础校验的阻塞问题必须修正，普通非阻塞建议不要求反复改稿。
 - 确认报「缺音色样本」：该 `@音频n` 没有音频文件，从表里删掉这个音色主体（以及 `card.narrator.voiceLabel`）再确认，不要空等。
 - `wait_for_video` 最多等约 50 秒，`timedOut=true` 就再调，直到 `succeeded` / `failed`。失败把 `lastError` 原样告诉用户，问要不要改表重出。

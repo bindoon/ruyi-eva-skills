@@ -1,239 +1,41 @@
-# 分镜表
+# 脚本与分镜
+
+以 `tools/list` 的输入 schema 为准。支持 `text` 的 `save_storyboard` 用文本脚本。维护旧服务或结构化历史稿时，按下文的结构化分镜流程处理。
 
 ## 文本脚本
 
-以 tools/list 返回的 schema 为准。支持 text 的服务可在 save_storyboard 中传入如下请求。
+1. 先用 `get_storyboard` 读最新版本，初稿 `baseVersion=0`。已有文本稿以返回的 `scenes[].shotPrompt`、时长、附件和 `card.shootingMode` 为底，只改用户点名的部分。
+2. `save_storyboard` 传 `contentItemId`、`baseVersion` 和 `text`。一段稿用 `text.prompt`，继承当前时长和素材。需要分次生成且允许剪辑时用 `text.segments`，各段给 `prompt` 与 `durationSeconds`，总和等于当前设置。未在本段正文引用但确实要随段发送的素材用 `attachments`。修改多段稿时保留未改段的正文、时长和附件。
+3. 服务端保存时校验文本稿。`validate_storyboard` 接收结构化 `storyboard`。查看保存结果的 `saved` 和 `mustFix`，保存成功后用 `get_storyboard` 核对版本、正文与素材。版本冲突时重读合并。确认生成前处理所有阻塞项，普通 `warnings` 按需取舍。
 
-```json
-{
-  "contentItemId": "内容 UUID",
-  "baseVersion": 0,
-  "text": {
-    "title": "蓝色杯子的工艺",
-    "shootingMode": "edited",
-    "prompt": "窗边自然光下，镜头从 @图片1 的杯口缓慢移到杯柄。保留实物颜色和轮廓。"
-  }
-}
-```
+素材使用 `get_content_context.mentions` 和已挂图的稳定 `@图片n`、`@音频n`。新素材按 [主体图](subject-images.md) 准备。挂图后重读草稿，核对版本和绑定，再改正文。新增或更换的素材若尚未写入稿件，用 `text.materials` 提交 `label`、`kind`、`name`、`assetId`，以及适用的 `personaId` 和 `usage`。上传后使用绑定工具返回的 `boundAssetId`，角色 face 和商品真图沿用本次选择。
 
-已有版本带最新 baseVersion。短片使用 prompt，长片可用 segments 明确每次生成的正文和时长。继承已选素材，正文中引用稳定的 @ 编号。saved 表示已保存，mustFix 列出生成前需要处理的问题。下面的结构化表格示例用于旧服务与历史稿件。
+## 正文写法
 
+- 写生成模型可执行的动作、镜头与声音。画面用中文，专名可保留原文，台词用目标语言。人物、商品和音色在实际使用处直接写稳定的 @ 编号，说明各图负责的身份、衣着、外观或空间。背景中的路人不进入角色设定。
+- 开场交代地点、站位、姿态、持物和可见范围。每拍写主要动作与结束状态，下一拍接续。写出交接、拾放和进出场，区分人物自身左右和画面左右。全片保持人物数量、衣着、道具归属和运动方向一致。
+- 景别、机位、焦点和运动服务于动作与揭晓。用触发事件和可见反应表现情绪。写实风格给出现场光源、曝光、肤色和材质，用户指定风格优先。全片共用的约束写一次。
+- 时间轴从 0 秒连续排到本次结尾。压时长先精简台词与次要动作，保留因果和交接。有人声才写台词，给呼吸、动作和停顿留余量。英文约每秒 2–2.6 词，中文约每秒 3–4 字作粗估。环境声、音效和音乐按需写。口播、字幕和宣称按 [合规指引](compliance.md) 检查。
 
-一张表 = 脚本卡 `card` + 主体 `subjects` + 逐镜 `scenes`，外加 `hookScript` / `cta` / `language` / `title` / `caption` / `hashtags`。完整 JSON Schema 在 MCP 资源 `ruyi://schema/storyboard`，与服务端校验一致。
+## 一镜到底
 
-你只写表。title 写短标题，card.synopsis 用1–3句中文描述当前剧情的开始、变化与结尾；改剧情时同步。确认时如奕按「标题 → 参考图分工 → 剧情概述 → 拍摄设定 → 动作时间线 → 必要约束」**编译**成片提示词，你不另写整段时间轴、不写 model / prompt / engine。
+明确「全片一镜到底，连续拍摄」。文本稿设 `text.shootingMode=single_take`，用一份 `prompt` 写全片。结构化稿用 `card.shootingMode=single_take`，时间段只标记同一个连续镜头的动作节拍。
 
-## 写实质感
+- 写清摄影机起点、主体站位、道具位置和初始可见范围。每拍说明主体动作、镜头如何跟随、结束时人和物在哪里。
+- 通过连续推近、后退、跟随或摇移改变景别和焦点。跨区域要拍出移动过程，避免跳切、反打、插入特写或瞬间换景。
+- 遮挡揭晓先定遮挡物和相机位置，再写移开或绕行后的首次可见时刻。遮挡前后保持人物、道具、声音和动作进程连续。
 
-未指定非写实风格时，`card.visualStyle` 写现场光源、自然曝光与白平衡、自然肤色、克制色彩和适度锐度；皮肤纹理随景别与光照变化，不强化毛孔。`negativeDirectives` 合并一条：避免磨皮、塑料皮肤、过度锐化、HDR 光晕及重度调色；禁项最多 6 条。须落表，明确风格优先。写实不等于事实证据。
+例如 10 秒稿可写「0–2 秒，中景固定，人物在桌左侧右手持杯，纸盒遮住桌右侧。2–6 秒，人物将杯放在桌上，相机向右平移，逐渐露出纸盒后的小狗。6–10 秒，相机停住，小狗探头，人物转头，杯子留在原位」。
 
-## 文件式编辑
+一镜到底的总时长与所用素材必须落在当前模型单次生成上限内。超限先保留稿件并说明阻塞，缩短时长、减少素材或经用户同意改为多镜剪辑。多个生成段拼接不能交付为一镜到底。
 
-1. `get_storyboard`：记下 `version`（无草稿时是 `0`，返回的是骨架）和 `storyboard`，写进 `ruyi/<contentItemId>/storyboard.json`。
-2. 整份编辑本地文件。
-3. `validate_storyboard`（同一份文档）。按返回改，直到 `ok=true` 且 `mustFix` 为空。
-4. `save_storyboard(contentItemId, baseVersion=刚读到的 version, storyboard, changeNote?)`。成功后版本 +1，`changedBy=mcp`。保存结果里仍有 `mustFix` 就接着修。
-5. **冲突**（返回 `conflict: true`）：用户可能在查看页 / 平台面板改过。以返回的 `latest` 为底稿，把你没入库的改动合并进去，用 `latestVersion` 作新的 `baseVersion` 再 validate → save。不要用旧文件覆盖用户的改动。
-6. `attach_subject_image` 会原地改最新草稿但**不出新版本号**：挂完图一定先 `get_storyboard` 刷新本地文件，再继续改表，否则会把刚钉上的图覆盖掉。
+## 结构化分镜
 
-已确认（`status` 不是 `draft`）的表不能再存；要改先 `regenerate_video` 打开新草稿。
+完整字段见 `ruyi://schema/storyboard`。用 `get_storyboard` 读取 `version` 和 `storyboard`，保存本地 `ruyi/<contentItemId>/storyboard.json`，修改后用 `validate_storyboard` 校验，再带 `baseVersion` 和 `storyboard` 调 `save_storyboard`。挂图可能直接更新最新稿且不增加版本号，挂完先复读再保存。冲突时用最新稿合并，已确认稿需要重新开草稿才能编辑。
 
-## 编号
+- `title` 写短标题，`card.synopsis` 用 1–3 句交代剧情，改剧情时同步。`card` 保留选定的角度、钩子、情绪弧、支柱和配方变量，带货填写购买顾虑和触发点。`visualStyle`、`continuityNotes`、`negativeDirectives` 分别写风格、跨镜承接和禁项。`shootingNotes` 供后期查看，生成要求写进实际编译字段。
+- `subjects` 保留建稿 mentions 的编号、`referenceAssetIds` 与适用的 `personaId`。用 `usage` 区分素材职责。`@图片n` 和 `@音频n` 独立编号，音色至多一个。固定人物只用该角色 face。已有稿的新编号先挂图取得。每个非音色主体至少进一镜，带货须有 `kind=product` 商品主体与真图。
+- `scenes` 保留已有 `sid`，新镜省略，锁定镜保持原样。镜时长支持小数，各镜之和等于总时长。`shotPrompt` 写中文画面，人物、商品和穿搭在动作处直接点名，场景进 `subjectLabels`。每镜只挂所用主体。`camera` 写运镜，`audio` 写非台词声音，`voiceover` 写目标语言台词，`voiceoverZh` 写译文。后期画面文字用 `onScreenText`。
+- `validate_storyboard` 的 `errors` 处理后才能提交，`mustFix` 在生成前清零。保存后重读，核对素材可解析和时长。单段时长、参考图和口播超限按返回修正。
 
-- **镜 `sid`**：已有镜必须保留（`s1`、`s2`…）。新镜不带 `sid`，服务端分配。删镜不复用编号，不要发明 `s99`。用户说「第 3 镜」先对到 sid。
-- **主体 `@图片n` / `@音频n`**：两套独立编号。第 1 版可以自由续编号；有版本之后，**新编号只能通过 `attach_subject_image` 产生**，表里直接写一个从没出现过的编号会被拒。所以第 1 版就把计划要用的主体行都写上（没图的先 `source=reference_only`、`referenceAssetIds=[]`）。
-- `get_content_context.mentions` 是建稿时已经分配好的编号，原样保留。
-
-## 脚本卡 card
-
-| 字段 | 填什么 |
-| --- | --- |
-| `synopsis` | 1–3句中文剧情概述，与当前分镜一致，不写分析和备选 |
-| `creativeAngle` | 选定角度，一句话（必填） |
-| `angleRationale` | 为什么这个角度对这个账号 / 这个品成立；对标信息写这里 |
-| `purchaseBarrier` / `coreTrigger` | 带货必填：观众不买的理由 / 打穿它的心理触发。养号不填 |
-| `emotionalArc` | 三段式（必填） |
-| `hookType` | 只选一种（必填），见 creative.md 十种钩子 |
-| `visualStyle` / `visualAnchor` | 全局风格一句 / 全片反复出现的画面锚点 |
-| `shootingMode` | `auto` 系统按分镜安排；`single_take` 一镜到底，或 `edited` 多镜剪辑。按需求自行选择，不追问用户。一镜到底的时间段是同一镜头里的动作节拍，不是切镜 |
-| `continuityNotes` | 进出场方向、空间位置、动作和道具状态承接，最多 6 条，会写进成片 prompt。一镜到底至少 1 条 |
-| `narrator` | `{ language, toneInstruction, voiceLabel }`；有口播时 `language` 必须有 |
-| `shootingNotes` | 按需供拍摄 / 后期查看，不进入成片提示词；必须生成的要求放到实际逐镜或连续性字段 |
-| `negativeDirectives` | 全片禁项，最多 6 条 |
-| `pillar` | 单元内容支柱原名 |
-| `variables` | 原创：配方每个变量的取值 `{ 变量名: 取值 }` |
-
-`card` 不接受自定义字段。
-
-## 主体 subjects
-
-| 字段 | 规则 |
-| --- | --- |
-| `label` | `@图片n` 或 `@音频n` |
-| `kind` | `person` 人设/角色 · `product` 商品 · `scene` 场景 · `voice` 音色 · `style` 穿搭 / 造型参考（不是第二个人，脸仍用人设） |
-| `name` | 短名（「Coco」「多效抗衰润肤棒」「客厅」）；mentions 里的照抄 `subject` |
-| `role` | 片中职责及互动对象，会与 usage 一起进入成片提示词 |
-| `description` | person：人设外貌（从 `soul.appearance` 抄）；穿搭只改衣服词，不要换成参考图里另一个人。product：只抄商品名 + 卖点 + 该图 `description`，**禁止自补颜色 / 材质 / 五金 / Logo** |
-| `usage` | 用户用途原样保留；未填时按图写参考属性，见下方字段分工 |
-| `source` | `persona_pointer` 人设 face · `unit_library` 单元库 / 商品库 · `session_upload` 用户这次给的图 · `generated` 你生成的图 · `reference_only` 原片有、我们还没图 |
-| `referenceAssetIds` | 素材 id，`[0]` 是成片用的那张，最多 4 个。人设主体只填该角色 `faceAssetId` |
-| `personaId` | 来自人设的 person 必填；修订时不要删、不要改 |
-| `sourceSubjectName` | 复刻：对应拆解 `subjects[].name` |
-
-常见写法：
-
-```json
-{ "label": "@图片1", "kind": "person", "name": "Coco", "role": "主角",
-  "description": "<soul.appearance 压成一句>", "source": "persona_pointer",
-  "referenceAssetIds": ["<faceAssetId>"], "personaId": "<personaId>" }
-{ "label": "@图片2", "kind": "product", "name": "<商品名>", "role": "被测试的商品",
-  "description": "<商品名>；<卖点>；<该图 description>", "source": "unit_library",
-  "referenceAssetIds": ["<commerceProducts[].images[].id>"] }
-{ "label": "@图片3", "kind": "scene", "name": "客厅", "description": "<该图 description>",
-  "source": "unit_library", "referenceAssetIds": ["<world.scenes[].assetId>"] }
-{ "label": "@音频1", "kind": "voice", "name": "主角音色", "description": "主角音色",
-  "source": "persona_pointer", "referenceAssetIds": ["<voiceAssetId>"] }
-```
-
-- 每个非音色主体都必须至少进一镜 `subjectLabels`，否则 `mustFix`。
-- 音色至多一个，用 `@音频n`，不要占 `@图片n`；相关镜 `subjectLabels` 带上它，`card.narrator.voiceLabel` 指向它。
-- 带货（`product_sales`）必须有 `kind=product` 主体，确认时必须有图。
-
-## 逐镜 scenes
-
-| 字段 | 规则 |
-| --- | --- |
-| `sid` | 已有镜保留；新镜省略 |
-| `beat` | 可选，简述本镜作用 |
-| `durationSeconds` | 支持小数秒；单镜不超过 15 秒；**各镜之和 = brief 时长** |
-| `suggestedDurationSeconds` | 压时长前你觉得合适的值（可选） |
-| `emotion` / `camera` / `location` | 情绪（落在情感弧里）/ 运镜机位 / 场景名 |
-| `visual` | 旧字段，省略；画面统一写 `shotPrompt` |
-| `shotPrompt` | **成片正文，中文写**（人名、地名、品牌名可留原文）。见下 |
-| `voiceover` | 目标语言口播；无口播留空 |
-| `voiceoverZh` | 目标语言不是中文时的译文 |
-| `audio` | 环境声、动作音效、音乐取舍；台词只放 voiceover |
-| `onScreenText` | 可选，后期屏幕文字备注，不承诺自动入片 |
-| `subjectLabels` | 这一镜**真出现**的 `@图片n` / `@音频n`，最多 8 个 |
-| `locked` | 锁住的镜修订时不能改也不能删 |
-| `sourceShotIndex` | 复刻：对应拆解镜号 |
-
-不要传 `index`、`estimatedSpeechSeconds`，服务端会算。
-
-## 逐镜通用框架
-
-先确定全片依据，再写逐镜：主体各自做什么、空间关系、开场状态、光线，以及哪些信息在何时被观众看见。简单片只写必要信息，不增加另一份报告。
-
-- `subjects.role` 写片中职责及互动对象；`usage` 写采用哪些图像属性，容易误用时补不采用的部分，如「只参考道具外观，不采用原图背景」。人物身份仍只用该角色 face。
-- 第一镜 `shotPrompt` 写清开场位置、姿态、持物和可见范围；持续不变的相对位置、道具材质与归属放 `continuityNotes`，光线色调放 `visualStyle`。空间布局可以完整规划，镜头不必在开场全景展示。
-- 有悬念或反转时，在相关镜的 `shotPrompt` / `camera` 写明揭晓前可见什么、通过何种遮挡或画外构图隐藏什么、哪一镜首次展示关键对象；`negativeDirectives` 补禁止提前泄露。只写「禁止提前全景」不够，近景也可能泄底。概述可以交代结局，逐镜必须保留揭晓顺序。
-- 必须影响成片的要求放入上述字段；`shootingNotes` 仅供拍摄或后期查看，不进入生成提示词。没有转场就省略，不逐镜填「转场：无」。
-
-每镜共用「时长 + 画面 + 运镜 + 声音 + 台词 + 素材」。故事线和镜头顺序按创作依据安排，不统一套三段式。
-
-| 信息 | 现有字段与写法 |
-| --- | --- |
-| 时长 | `durationSeconds`；镜号与时间轴由系统派生 |
-| 画面 | `shotPrompt`：谁、在哪里、做什么、可见变化 |
-| 运镜 | `camera`：景别、角度、运动；也可固定机位 |
-| 声音 | `audio`：环境声、动作音效、音乐的取舍 |
-| 口播 | `voiceover`：实际说的话；非中文译文放 `voiceoverZh` |
-| 素材 | `subjectLabels`：本镜参考素材编号 |
-
-`beat` 简述本镜作用，如「引出问题」「展示细节」；「强停留」「建立信任」不能代替具体画面。画面配合台词，讲细节就让细节可见。
-
-可选项按需填：无人声留空台词，不硬加音乐或运动，简单镜头一句即可，不为凑格式反复修订。共用风格和连续性放全片设定，按字段保存，不另写拆解报告。
-
-## 字段分工
-
-- `subjects.usage`：素材参考哪些属性。用户已填用途原样保留；未填时按实际图补一句，易串角色才补不采用的内容。例：场景「只参考空间和光线，不引入图中人物」；换装「只参考服装，身份仍是主角」。外貌由图定义，不把 description 抄进逐镜。
-- `shotPrompt` 用中文写，人名、地名、品牌名可以保留原文。从动作起笔，人物 / 商品 / style 在做事处 inline `@图片n`，且与本镜 `subjectLabels` 对齐；场景只进 labels。开头连续 2+ 标签会被剥掉，单个开头标签保留。画面只写 `shotPrompt`，省略 `visual`；地点写进画面。
-- `camera`：景别、机位、运动与焦点对象。少见术语补可见变化，如「移焦：手中杯子逐渐虚化，后方人物面部变清晰」。转场写触发物、方向和到达构图；一镜到底只能连续运动，不能跳到独立特写。
-- `audio`：按需写环境声、动作音效、音乐的取舍。无人声时 voiceover 留空；不要为凑字段增加声音。台词只放 `voiceover`，译文只放 `voiceoverZh`；语言和口音 / 语气用 `language`、`card.narrator`，不在 audio 或 shotPrompt 重抄台词。
-- `card.visualStyle` / `negativeDirectives`：全局风格 / 禁项，逐镜不重复。准确字幕、Logo、价格、CTA 字样不交给成片模型；屏幕文字备注填 onScreenText。不要宣称平台已经自动完成后期。
-
-## 动作与状态
-
-每段一个主要变化，必要时写「动作 → 结束时可见状态」：谁仍在画面哪侧、道具由谁持有、放在哪里、数量是否改变。下一段从该状态承接；简单镜头一句即可，不强制长模板。按用户给定的物理 / 材质 / 禁项写清，不得概括。
-
-`continuityNotes` 只写跨镜不变量：身份与数量、服装、道具归属、空间方向、光线或运动趋势，最多 6 条，一镜到底至少 1 条。区分人物自身左右与画面左右。情绪保留 emotion / emotionalArc，正文用触发事件加 2–4 个关键外在反应，不堆抽象强度词或无关细节。
-
-时长支持小数秒，不强制 0.5 秒步进，系统生成连续时间轴；时间是节奏指引，不保证帧级落点。动作过密就删非必要动作或与用户调整时长，不塞频次指令。一镜到底的总时长与参考图必须落在当前单段上限内，单段最多 30 张图；以 get_content_context 返回的 constraints 为准，不因指南写 30 秒就放宽。
-
-## 一镜写法示例
-
-以下只展示逐镜字段，主体和全片设定仍按实际素材填写：
-
-```text
-durationSeconds：3
-beat：展示摆放
-shotPrompt：@图片1 将 @图片2 放在桌面中央，松手后商品停稳，手已移开。
-camera：固定中景，人物和商品同框。
-audio：轻微放置声与室内底噪，无背景音乐。
-voiceover：It fits right here.
-voiceoverZh：它正好放这里。
-subjectLabels：[@图片1, @图片2]
-```
-
-
-### 编译出来长这样（只用来理解，不要自己写）
-
-```
-《<title>》
-参考素材：<subjects 的编号、名字、role 和 usage>
-剧情概述：<card.synopsis>
-拍摄设定：<时长和画幅>
-拍摄方式：全片一镜到底。以下时间段是同一个连续镜头内的动作节拍，不代表切镜……
-风格：<card.visualStyle>
-连续性要求：<continuityNotes>
-动作时间轴（时间为节奏指引）：
-[0-2.5s] @图片1 <shotPrompt>。镜头：<camera>。声音：<audio>。口播（en）："…"
-禁止：<negativeDirectives>
-不得生成字幕、Logo、价格、CTA 文案或购买按钮；这些由后期合成。
-```
-
-口播和声音由视频模型按提示词一起生成，没有独立 TTS。
-
-## 口播时长
-
-- 口播按需：先决定这条有没有人声，无人声 `voiceover` 留空，不要为了凑而硬写。
-- 系统按语言估算每镜口播秒数；**估时超过画面时长 + 0.5 秒进 `mustFix`**，确认前必须改完。
-- 上限：英文不超过 `2.6 × (镜时长 + 0.5)` 个词，中文不超过 `4.2 × (镜时长 + 0.5)` 个字。3 秒镜约 9 个英文词，4 秒镜约 11 个。数字和缩写读出来更长（`33-degree` → thirty-three degrees），再留余量。
-- 一镜一句、一口气说完；在名词或数字上断句。最后一镜落在 CTA 或固定结尾，不加告别。
-- 超时只砍那几镜的口播：去形容词、一镜一句，每次都比上一版短；砍完仍超才缩画面，镜数不变。
-
-## 修订
-
-用户改的是槽位，不是故事。没点名的镜逐字保留，只改被点名的部分：
-
-| 用户说 | 只改 | 不动 |
-| --- | --- | --- |
-| 压到 15 秒 | 相关镜 `durationSeconds`，砍口播 | 镜数、画面 |
-| 换场景 | `location`、`shotPrompt` 环境词；缺场景主体就加一行并写进相关镜 `subjectLabels`（有版本后新编号要走 attach） | 人物动作、口播 |
-| 改第 n 镜口播 | 该镜 `voiceover` / `voiceoverZh` | 其它镜 |
-| 换 / 重生某主体图 | 出图后 attach 到原编号 | 表的文字 |
-| 挪镜 | 调整数组顺序，保留 sid | 不要删了再新建 |
-
-- 复刻时长缩放：按比例缩每镜、砍口播字数，镜数不变（20 秒 5 镜压到 15 秒是每镜缩 25%，不是砍掉一镜）。
-- 出图黑、手坏、脸漂是生图缺陷，重生图即可，不改表。
-- `changeNote` 写一句为什么改（用户要求 / 口播超时 / 合规改词 / 口味 / 试另一种钩子）。
-- 最新一版是 `draft` 时，哪怕更早有一版已确认、已经出过片，也按这一版继续改；不要告诉用户「已确认没法改」。
-
-## 保存前写作自查
-
-检查素材对应与职责、动作容量、必要结束状态、人物数量与道具归属、机位和拍摄方式、声音取舍及语言。此处是创作自查，不新增服务端硬门。validate → save → get_storyboard 复读，清零阻塞问题后交付。起草时自行检查动作承接，不调用独立审阅，不为主观建议反复改稿。基础校验通过不代表成片效果保证。
-
-## 系统会拦的
-
-| 级别 | 情形 |
-| --- | --- |
-| 拒绝保存 | 各镜时长之和 ≠ brief 时长；单镜超所选模型单段上限；一镜到底总时长或参考图超过单段上限；`subjectLabels` 指向不存在的主体；`shotPrompt` 写了不在 `subjectLabels` 里的编号；主体编号重复或非法；音色多于 1 个；建稿 mentions 丢失或没进镜；单段参考图超 30 张；改了锁定镜；新编号未经 attach |
-| `mustFix`（存得进去，确认前必须清） | 口播明显超时；`shotPrompt` 缺失或没点名本镜人物 / 商品；主体没进任何镜；带货没有商品主体；有口播没语言；与近作角度 + 钩子重复或变量取值完全相同 |
-| `warnings`（仅需取舍时简要说明） | 轻微口播超时；画面提到字幕 / Logo / 价格 / 购物车；支柱连用 3 条、变量池外新值等 |
-| 确认时额外拦 | 进镜主体没有图；带货商品主体没有图 |
-
-## 创作红线自查
-
-写原创/创意复刻分镜前，单独调用 `search_knowledge`，`categories: ["redline"]`，query 带行业、市场、主题；修改商品/市场/主题/宣传表述后再查。按行业、市场、平台判断平台和当前租户规则的适用范围，空数组不限。block 必须遵守，warn 提醒，rewriteHint 用于改写。零命中可继续，故障要明确告知。检查口播、屏幕字、钩子与 CTA，不能照抄参考片的违规宣称。
-
-写作方法参考：[火山 Seedance 2.5 指南](https://docs.volcengine.com/docs/ark/seedance-2-5-prompt-guide?lang=zh)、[飞书撰写指南](https://bytedance.larkoffice.com/docx/OsiUdR1OxoDqvnxsK8LczYx7nPd)。这里只吸收现有分镜字段可执行的写法，不代表如奕新增视频编辑、延长或关键帧接口。提示词不保证特定画质、完全一致或帧级剪辑。
+交付前检查素材、动作容量、必要结束状态、声音与语言。连续长镜沿时间轴确认摄影机能走完、主体与道具没有瞬移、揭晓前没有穿帮。按保存和校验结果处理具体问题，直接交付查看页。
